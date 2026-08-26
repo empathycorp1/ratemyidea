@@ -23,9 +23,10 @@ a paid one (the Highlight Board, ranked by spend). Full concept in
 `main` auto-deploys. No CLI needed or working (see Deployment below).
 
 Built and working end-to-end: idea submission → scoring → result page
-→ share card → homepage with both boards, live stats, likes, and a
-working dark theme. Verified against real production traffic
-throughout, not just locally.
+→ share card → homepage with both boards, live stats, likes, a working
+dark theme, and a real Highlight Board payment flow via Dodo Payments
+(test mode). Verified against real production traffic and Dodo's real
+test-mode API throughout, not just locally.
 
 **Database was wiped for launch just before this note was written.**
 All tables were emptied and every serial id sequence reset to 1, then
@@ -67,10 +68,38 @@ app/
   api/card/[id]/route.tsx   — share card PNG via next/og (force-dynamic)
   api/score/route.ts        — POST, scores an idea
   api/like/route.ts, api/presence/route.ts — POST, both fire-and-forget
-  highlight/page.tsx, highlight/[id]/page.tsx — PLACEHOLDERS ONLY
+  highlight/page.tsx        — still a PLACEHOLDER (query-param, no idea
+                              attached — the homepage claim strip's
+                              generic "Highlight" link; out of scope,
+                              never built)
+  highlight/[id]/page.tsx   — REAL: Dodo checkout form for one idea
+                              (force-dynamic)
+  highlight/[id]/done/page.tsx — REAL: post-checkout confirmation/poll
+                              page (force-dynamic)
+  api/highlight/checkout/route.ts — POST: writes a pending `highlights`
+                              row, creates the Dodo checkout session
+  api/highlight/status/[id]/route.ts — GET: polled by the done page;
+                              reconciles against Dodo on every pending
+                              poll (force-dynamic)
+  api/dodo/webhook/route.ts — POST: source of truth for placement —
+                              see "Highlight Board payment flow" below
   test/page.tsx              — raw-JSON scoring test page — see Known Issues
-  home.css, result.css       — see "CSS namespacing" below
+  home.css, result.css, highlight.css — see "CSS namespacing" below
   layout.tsx                 — root layout + blocking dark-mode bootstrap script
+
+lib/
+  dodo.ts                  — DodoPayments SDK client singleton; throws
+                              at import time if DODO_ENVIRONMENT isn't
+                              exactly "test_mode" (see below)
+  highlights.ts             — all `highlights` table access: pending
+                              row creation, activateHighlight (webhook's
+                              path), deactivateHighlightByPaymentId
+                              (refund path), reconcileHighlight (dropped-
+                              webhook recovery)
+  highlight-url.ts          — validates the optional website URL against
+                              terms.html §07 (https-only, no shorteners,
+                              no affiliate params, no invite links, best-
+                              effort no-redirect-chain check)
 
 db/schema.sql               — idempotent, safe to rerun via `npm run db:migrate`
 scripts/migrate.mjs         — runs schema.sql against DATABASE_URL
@@ -219,13 +248,68 @@ a new row is rejected if *either* already matches for that idea, not
 just one. No accounts exist, so this is what "one like per person"
 means without them.
 
+## Highlight Board payment flow (Dodo Payments, test mode)
+
+Built end-to-end and verified live against Dodo's test-mode API (real
+checkout sessions created, a real signed webhook activated a placement,
+an amount-mismatch case was flagged not activated, a refund removed
+it, a forged signature was rejected — all confirmed against the actual
+`highlights` table and the actual rendered homepage board, not just
+code review). `DODO_ENVIRONMENT` must be exactly `"test_mode"` —
+`lib/dodo.ts` throws at import time otherwise, so this can't silently
+start charging real cards.
+
+**Flow:** `/highlight/[id]` (real checkout form, reuses AmountStepper
+verbatim) → POST `/api/highlight/checkout` writes a `pending` row in
+`highlights` *first*, then creates a Dodo checkout session with the
+pending row's id in `metadata.highlightId` and the amount (cents) as
+the PWYW `product_cart[0].amount` → redirect to Dodo's hosted checkout
+→ Dodo redirects back to `/highlight/[id]/done?highlightId=N`, which
+polls `GET /api/highlight/status/[id]` every ~2.5s.
+
+**The webhook (`/api/dodo/webhook`), not the redirect, is what actually
+places anything on the board.** It verifies the signature via the
+SDK's `client.webhooks.unwrap()` (built on `standardwebhooks`, the same
+Svix-compatible scheme — no need to hand-roll HMAC verification). On
+`payment.succeeded` it activates the row (`lib/highlights.ts`'s
+`activateHighlight`), but only if the amount Dodo actually charged
+matches what the row was created for — a mismatch flags the row and
+leaves it `pending` rather than activating, logged as an error. On
+`refund.succeeded` it flips an `active` row back to non-board. A bad
+signature or a handler exception both still return `200` immediately
+(logged first) — Dodo retries on non-2xx, and nothing here would
+behave differently on a retry, so there's no reason to trigger one.
+
+**Idempotency has no separate dedupe table** — it falls directly out of
+`activateHighlight`'s `WHERE status = 'pending'` guard (a row can only
+ever transition pending→active once) and `deactivateHighlightByPaymentId`'s
+`WHERE status = 'active'` guard. A replayed webhook delivery just finds
+nothing left to update.
+
+**Reconciliation has no cron job.** `/api/highlight/status/[id]` calls
+`reconcileHighlight()` on every poll of a still-`pending` row — it asks
+Dodo directly (checkout session → payment) and activates through the
+exact same `activateHighlight()` path the webhook uses. A dropped
+webhook self-heals the next time the done page polls; nothing runs on
+a schedule.
+
+**The `highlights` table stores cents** (`amount_cents`), not the
+dollars the old empty placeholder table had — `getHighlightBoardRows`/
+`getTopHighlightAmount`/`getLiveStats` in `lib/get-board-data.ts` all
+divide by 100 on the way out. `MAX_BID` moved from the old placeholder
+value of 500000 to **999999** — Dodo's product itself has no configured
+maximum (their dashboard doesn't offer one), so this ceiling is
+enforced entirely in this codebase, at three separate points: the
+stepper/clamp in `lib/board-ui.ts`, the server-side clamp when
+`/highlight/[id]` loads, and again right before checkout-session
+creation in the API route — never trust a client-supplied amount past
+that last point.
+
 ## Half-finished / explicitly deferred (by instruction, not by accident)
 
-- **Highlight payment flow.** No Stripe/Lemon Squeezy/Dodo Payments
-  integration exists. The `highlights` table and all the board-reading
-  code around it are real and ready, but nothing can ever insert a row
-  into it yet. `/highlight` (query-param) and `/highlight/[id]` are
-  both bare placeholder pages.
+- **`/highlight` (query-param, no idea attached)** stays a placeholder —
+  it's the homepage claim strip's generic link and was never in scope;
+  only `/highlight/[id]` (a specific idea) was requested and built.
 - **Stats page, legal pages, "How scoring works?" page.** All footer
   links to these are `href="#"`.
 - **Result view's dark theme exists** (see above) — don't reintroduce
@@ -268,7 +352,14 @@ means without them.
    do work. Not a app bug; a quirk of this specific tooling sandbox.
    Worth knowing before assuming a "failed" interaction test means
    broken code.
-6. **Git history starts from one large initial commit** (`9305aa9`) —
+6. **The Highlight Board's optional URL validation is best-effort, not
+   airtight.** `lib/highlight-url.ts` blocks a fixed list of known
+   shortener/invite-link hosts and common affiliate query params, and
+   does a `HEAD` request with `redirect: "manual"` to catch a URL that
+   itself 3xx-redirects — but a shortener not on the list, or a domain
+   that redirects only on GET (not HEAD), gets through. This is
+   mechanical enforcement of terms.html §07's rules, not abuse review.
+7. **Git history starts from one large initial commit** (`9305aa9`) —
    this project had no git repository for most of its build; `git init`
    happened only when the Vercel CLI's device login broke. Everything
    before that point has no per-change history, just the state of the
@@ -283,9 +374,17 @@ means without them.
   GitHub login on first push from a fresh session/machine; cached after
   that.
 - **Env vars** (`DATABASE_URL`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SITE_URL`,
-  optionally `DAILY_SCORE_CAP`) are set directly on the Vercel project
-  dashboard, not derived from `.env.local` at deploy time — `.env.local`
-  is gitignored and only matters for local dev.
+  `DODO_API_KEY`, `DODO_WEBHOOK_SECRET`, `DODO_PRODUCT_ID`,
+  `DODO_ENVIRONMENT`, optionally `DAILY_SCORE_CAP`) are set directly on
+  the Vercel project dashboard, not derived from `.env.local` at deploy
+  time — `.env.local` is gitignored and only matters for local dev.
+  `DODO_ENVIRONMENT` must stay `"test_mode"` until going live is a
+  deliberate decision — see "Highlight Board payment flow" above.
+  **The Dodo webhook endpoint (`/api/dodo/webhook`) also needs to be
+  registered in the Dodo test-mode dashboard** pointing at
+  `https://ratemyidea-flax.vercel.app/api/dodo/webhook` — that
+  registration lives on Dodo's side, not in this repo, so it doesn't
+  travel with a redeploy or a fresh clone.
 - **Local dev:** `npm run dev` (or the `ratemyidea-dev` launch config).
   Note Next's docs say pages are *always* dynamically rendered in dev
   regardless of `force-dynamic` — the PRERENDER bug above was

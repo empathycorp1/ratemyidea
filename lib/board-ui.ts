@@ -5,10 +5,16 @@
 // $5 minimum, matching the terms page (the prototype itself had $4 —
 // corrected here to match the actual stated terms, not a value taken
 // from the prototype file). Single source of truth for the stepper,
-// the initial claim-strip amount, and the /highlight placeholder's
+// the initial claim-strip amount, and every /highlight screen's
 // defensive clamping.
 export const MIN_BID = 5;
-export const MAX_BID = 500000;
+// Dodo's product itself has no configured maximum (their dashboard
+// doesn't offer one) — this $999,999 ceiling is enforced entirely on
+// our side: here (the stepper/clamp), in app/highlight/[id]/page.tsx,
+// and again in app/api/highlight/checkout/route.ts right before a
+// checkout session is created, so no path to Dodo can ever be reached
+// with an amount above it.
+export const MAX_BID = 999999;
 
 export function stepSize(v: number): number {
   if (v < 10) return 1;

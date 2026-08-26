@@ -46,6 +46,7 @@ next-env.d.ts
 # live in .env.local — these must never reach git history)
 API Key.txt
 env.txt
+Test Product Details.txt
 
 # one-off installers downloaded into this folder, not project source
 *.exe

@@ -1,0 +1,261 @@
+/* Highlight Board checkout + confirmation screens
+   (app/highlight/[id]/page.tsx, app/highlight/[id]/done/page.tsx).
+
+   These pages reuse home.css's shell verbatim — .page-shell, .aurora,
+   .wrap, header/.brandwrap/.mark/.brand/.toggle, and the .claim /
+   .lead / .step / .field / .note / .go classes that AmountStepper
+   already renders into — rather than redefining any of it here.
+
+   Everything genuinely new to these two screens is prefixed `hlchk-`,
+   following the same collision-avoidance convention result.css uses
+   (see PROGRESS.md's "Result view CSS is namespaced" note) — home.css
+   already owns an unrelated `.hl` (Highlight Board card) class family,
+   and these screens are a separate cascade sharing the same page. */
+
+.hlchk-main {
+  padding: 60px 0 0;
+}
+
+.hlchk-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--hl-tag);
+  font-weight: 700;
+}
+
+.hlchk-title {
+  font-size: clamp(28px, 5vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-top: 10px;
+  line-height: 1.15;
+}
+
+.hlchk-idea-card {
+  margin-top: 26px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+}
+.hlchk-idea-card p {
+  font-size: 16.5px;
+  line-height: 1.45;
+  color: var(--text);
+}
+.hlchk-idea-card .hlchk-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.hlchk-idea-card .hlchk-meta b {
+  color: var(--indigo);
+  font-weight: 700;
+}
+
+.hlchk-top {
+  margin-top: 22px;
+  font-size: 15px;
+  color: var(--muted);
+  text-align: center;
+}
+.hlchk-top b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.hlchk-claim {
+  margin-top: 8px;
+}
+
+.hlchk-fields {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.hlchk-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+.hlchk-field .hlchk-optional {
+  font-weight: 400;
+  color: var(--faint);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.hlchk-field input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 16px;
+  outline: 0;
+}
+.hlchk-field input::placeholder {
+  color: var(--faint);
+}
+.hlchk-field input:focus {
+  outline: 2px solid var(--periwinkle);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.hlchk-field-error {
+  margin-top: 6px;
+  font-size: 13.5px;
+  color: var(--heart);
+}
+
+.hlchk-terms {
+  margin-top: 28px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  text-align: center;
+}
+
+.hlchk-error {
+  margin-top: 16px;
+  font-size: 14.5px;
+  color: var(--heart);
+  text-align: center;
+}
+
+.hlchk-submit {
+  width: 100%;
+  margin-top: 16px;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: 0;
+  border-radius: 999px;
+  padding: 16px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.hlchk-submit:hover:not(:disabled) {
+  opacity: 0.87;
+}
+.hlchk-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hlchk-back {
+  display: block;
+  margin-top: 24px;
+  font-size: 14.5px;
+  color: var(--muted);
+  text-decoration: none;
+  text-align: center;
+}
+.hlchk-back:hover {
+  color: var(--text);
+}
+
+/* Confirmation / status page */
+
+.hlchk-status-card {
+  margin-top: 20px;
+  text-align: center;
+  padding: 40px 20px;
+}
+.hlchk-status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-bottom: 20px;
+  animation: hlchk-pulse 1.6s ease-in-out infinite;
+}
+.hlchk-status-dot.pending {
+  background: var(--periwinkle);
+}
+.hlchk-status-dot.active {
+  background: #2fbf71;
+  animation: none;
+}
+.hlchk-status-dot.failed,
+.hlchk-status-dot.flagged {
+  background: var(--heart);
+  animation: none;
+}
+@keyframes hlchk-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+.hlchk-status-title {
+  font-size: clamp(24px, 4.5vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hlchk-status-body {
+  margin-top: 12px;
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 46ch;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+.hlchk-status-slow {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--faint);
+}
+
+.hlchk-actions {
+  margin-top: 28px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.hlchk-actions a {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+}
+.hlchk-actions a.primary {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+}
+.hlchk-actions a.primary:hover {
+  opacity: 0.87;
+}
+.hlchk-actions a.secondary {
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+.hlchk-actions a.secondary:hover {
+  border-color: var(--periwinkle);
+}

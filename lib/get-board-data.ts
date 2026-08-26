@@ -80,8 +80,12 @@ export async function getMeritBoardRows(
 
 /**
  * Whatever is currently featured on the Highlight Board, ranked by
- * amount paid. Empty right now — there's no payment flow yet, so
- * nothing has ever been inserted into `highlights`.
+ * amount paid. Only 'active' rows count — a placement is live only once
+ * the Dodo webhook has confirmed payment (see
+ * app/api/dodo/webhook/route.ts); 'pending'/'refunded'/'failed' rows
+ * never appear here. Ties (equal amount) break by created_at ASC,
+ * matching terms.html §05: "where two placements hold equal amounts,
+ * the one paid for earlier ranks higher."
  */
 export async function getHighlightBoardRows(): Promise<HighlightRow[]> {
   const rows = await query<{
@@ -89,7 +93,7 @@ export async function getHighlightBoardRows(): Promise<HighlightRow[]> {
     submission_id: number;
     idea_text: string;
     category: string;
-    amount: number;
+    amount_cents: number;
     visits: number;
   }>(
     `SELECT
@@ -97,11 +101,12 @@ export async function getHighlightBoardRows(): Promise<HighlightRow[]> {
        h.submission_id,
        s.idea_text,
        s.category,
-       h.amount,
+       h.amount_cents,
        s.visits
      FROM highlights h
      JOIN submissions s ON s.id = h.submission_id
-     ORDER BY h.amount DESC, h.created_at ASC`
+     WHERE h.status = 'active'
+     ORDER BY h.amount_cents DESC, h.created_at ASC`
   );
 
   return rows.map((r) => ({
@@ -110,18 +115,20 @@ export async function getHighlightBoardRows(): Promise<HighlightRow[]> {
     initial: r.idea_text.trim().charAt(0).toUpperCase() || "?",
     ideaText: truncateForBoard(r.idea_text, 140),
     category: r.category,
-    amount: r.amount,
+    // Amounts are always whole dollars at checkout time (see
+    // app/api/highlight/checkout/route.ts), so this division is exact.
+    amount: r.amount_cents / 100,
     visits: r.visits,
   }));
 }
 
-/** Highest current highlight amount, for the claim strip's "$X takes
- *  the top spot" line — 0 if nothing is highlighted yet. */
+/** Highest current (active) highlight amount, for the claim strip's
+ *  "$X takes the top spot" line — 0 if nothing is highlighted yet. */
 export async function getTopHighlightAmount(): Promise<number> {
   const rows = await query<{ max: number | null }>(
-    `SELECT max(amount) AS max FROM highlights`
+    `SELECT max(amount_cents) AS max FROM highlights WHERE status = 'active'`
   );
-  return rows[0]?.max ?? 0;
+  return Math.round((rows[0]?.max ?? 0) / 100);
 }
 
 export async function getLiveStats(): Promise<LiveStats> {
@@ -133,12 +140,12 @@ export async function getLiveStats(): Promise<LiveStats> {
     `SELECT
        (SELECT count(*) FROM presence WHERE last_seen > now() - interval '60 seconds') AS here_now,
        (SELECT count(*) FROM submissions) AS total_scored,
-       (SELECT coalesce(sum(amount), 0) FROM highlights) AS total_earned`
+       (SELECT coalesce(sum(amount_cents), 0) FROM highlights WHERE status = 'active') AS total_earned`
   );
   const row = rows[0];
   return {
     hereNow: Number(row?.here_now ?? 0),
     totalScored: Number(row?.total_scored ?? 0),
-    totalEarned: Number(row?.total_earned ?? 0),
+    totalEarned: Math.round(Number(row?.total_earned ?? 0) / 100),
   };
 }
