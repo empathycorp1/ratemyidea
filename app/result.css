@@ -1,0 +1,372 @@
+/*
+ * Exact CSS from result-page-prototype.html, for the approved result
+ * page design. Ignored per instructions: .picker and its children
+ * (prototype scaffolding for switching between demo results/durations).
+ *
+ * Every class below is prefixed `result-` (root: `.result-view`). The
+ * prototype's own bare names — `.row`, `.note`, `.tag`, `.error` — are
+ * common enough that homepage-prototype.html's board UI (app/home.css)
+ * ended up defining two of them too (`.row` for Merit Board entries,
+ * `.note` for the claim strip's caption), and since both stylesheets
+ * share one cascade on this page, the board's rules were winning
+ * outright — e.g. `.row{display:grid;grid-template-columns:...}`
+ * turned each breakdown row into a 3-column grid, splitting the
+ * dimension name, the bar, and the "8 / 25" onto separate lines
+ * instead of the intended flex row with the bar beneath. Full audit of
+ * every class in both files: only `.row` and `.note` actually
+ * collided (`.tag`/`.page-shell`/`.wrap`/`.hero` are legitimately
+ * shared via ancestor-scoped selectors, not independent redefinitions)
+ * — but every class here is namespaced now regardless, so this can't
+ * silently recur as either file grows. `.hero` itself is NOT
+ * namespaced — home.css owns it outright, and this file only ever
+ * reaches into it via the scoped `.hero .result-error` rule below, not
+ * a competing definition.
+ *
+ * Adaptations required to host this inside the Next.js app (values
+ * themselves are untouched):
+ *  - `body{...}` became `.page-shell{...}` — the real <body> element is
+ *    already styled by app/globals.css / app/layout.tsx, so these
+ *    properties are applied to a wrapping div instead (defined once,
+ *    in home.css).
+ *  - This file's own tokens (--black, --grey, --grey-soft) are aliases
+ *    onto home.css's real theme-aware tokens (--text, --muted,
+ *    --faint) instead of frozen light-only hex values, and
+ *    --indigo/--periwinkle/--line are not redeclared here at all, so
+ *    those inherit straight from home.css's :root / [data-theme="dark"]
+ *    — the same variables the boards use, which is what makes the
+ *    score and periwinkle accents lighten on dark exactly as they do
+ *    there: it's the same cascade, not a copy of it.
+ *  - A few hardcoded light-only colors that had no theme-aware
+ *    equivalent at all (the info-button border, the progress track
+ *    background, the note panel, the nudge panel, the share menu) now
+ *    reuse existing home.css tokens instead (--line, --chip, --panel,
+ *    --pop) rather than inventing new dark hex values — see each rule
+ *    below for which.
+ *  - Two small additions beyond the prototype, clearly not from the
+ *    source file: `.hero .result-error` (the submission form has no
+ *    error state in either provided file) and `.result-share-menu`
+ *    (the desktop share fallback menu — the prototype's button has no
+ *    onclick at all).
+ */
+
+.result-view {
+  --black: var(--text);
+  --grey: var(--muted);
+  --grey-soft: var(--faint);
+  color: var(--black);
+  padding-top: 46px;
+  text-align: center;
+}
+
+.result-submitted {
+  font-size: 17px;
+  color: var(--grey);
+  max-width: 44ch;
+  margin: 0 auto 34px;
+}
+.result-scorewrap {
+  position: relative;
+}
+.result-score {
+  font-size: clamp(120px, 26vw, 180px);
+  line-height: 0.85;
+  font-weight: 700;
+  color: var(--indigo);
+  letter-spacing: 0.015em;
+  font-variant-numeric: tabular-nums;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+.result-outof {
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-soft);
+  margin-top: 14px;
+}
+/* Moved below .result-verdict (was above it, between .result-outof and
+   .result-verdict) — see components/ResultView.tsx. That was pushing
+   the verdict — the point of the card — down far enough to sit below
+   the fold on a laptop. margin-top now separates it from the verdict
+   above instead of from .result-outof. */
+.result-rank {
+  font-size: 15px;
+  color: var(--grey);
+  margin-top: 8px;
+}
+
+.result-reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+.result-reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+.result-verdict {
+  font-size: clamp(24px, 4.6vw, 32px);
+  line-height: 1.28;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  /* Was margin:40px auto 0 with max-width:22ch — that centered a
+     narrow column, which both wrapped to 5 lines at typical length
+     and pushed everything below it further down the page. Now spans
+     the full result column, left-aligned, with a smaller top margin
+     to keep it visible without scrolling right as the count settles. */
+  margin-top: 18px;
+  text-align: left;
+}
+
+/* breakdown */
+.result-breakdown {
+  margin-top: 52px;
+  text-align: left;
+}
+.result-breakdown h3 {
+  font-size: 11.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--grey-soft);
+  font-weight: 400;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.result-row {
+  margin-bottom: 17px;
+}
+.result-rowtop {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15.5px;
+  margin-bottom: 7px;
+}
+.result-rowtop b {
+  font-weight: 400;
+}
+.result-rowtop span {
+  color: var(--grey);
+  font-variant-numeric: tabular-nums;
+}
+.result-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--grey-soft);
+  line-height: 1;
+  padding: 0;
+  vertical-align: 1px;
+}
+.result-info:hover {
+  border-color: var(--periwinkle);
+  color: var(--indigo);
+}
+.result-explain {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.35s ease, opacity 0.3s ease, margin 0.35s ease;
+  font-size: 15px;
+  color: var(--grey);
+}
+.result-explain.open {
+  max-height: 120px;
+  opacity: 1;
+  margin-top: 9px;
+}
+.result-track {
+  height: 6px;
+  background: var(--chip);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.result-fill {
+  height: 100%;
+  width: 0;
+  background: var(--periwinkle);
+  border-radius: 99px;
+  transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* low score note */
+.result-note {
+  margin-top: 40px;
+  border-radius: 16px;
+  padding: 22px 24px;
+  background: linear-gradient(140deg, #f3f2fd 0%, #fdf1f6 100%);
+  border: 1px solid #e9e5f5;
+  text-align: left;
+}
+/* The light gradient has no natural dark equivalent (it's not derived
+   from a token), so dark mode swaps it for the same translucent
+   surface used elsewhere (--panel) rather than inventing a new color. */
+[data-theme="dark"] .result-note {
+  background: var(--panel);
+  border-color: var(--line);
+}
+.result-note b {
+  display: block;
+  margin-bottom: 6px;
+}
+.result-note p {
+  font-size: 16px;
+  color: #3a3a3a;
+}
+[data-theme="dark"] .result-note p {
+  color: var(--muted);
+}
+
+/* actions */
+.result-actions {
+  margin-top: 40px;
+  display: flex;
+  gap: 11px;
+  flex-wrap: wrap;
+  position: relative;
+}
+.result-btn {
+  /* background/color use the same flip-pair the boards' solid buttons
+     use (.submit, .claim button.go in home.css) — black-on-white in
+     light mode, white-on-black in dark, not the plain text token,
+     since a *button fill* needs to invert with the theme rather than
+     just follow it the way body text does. */
+  flex: 1 1 200px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 14px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 1px solid var(--btn-bg);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+}
+.result-btn.ghost {
+  background: transparent;
+  color: var(--black);
+}
+.result-btn:hover {
+  opacity: 0.86;
+}
+
+/* highlight nudge */
+.result-nudge {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: left;
+  /* Was a hardcoded rgba(255,255,255,.8) — a translucent white panel
+     that would sit wrong on a dark page. --panel is the same kind of
+     translucent surface, already themed. */
+  background: var(--panel);
+}
+.result-nudge .result-tag {
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--indigo);
+}
+.result-nudge h4 {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 8px 0 6px;
+  letter-spacing: -0.012em;
+}
+.result-nudge p {
+  font-size: 15.5px;
+  color: var(--grey);
+}
+.result-nudge button,
+.result-nudge a {
+  /* .result-nudge a is not in the prototype (which only ever renders a
+     <button>) — "Highlight this idea" is a real link to /highlight/[id]
+     here, so it needs to be an <a> to behave like one, styled
+     identically to the button rule above. */
+  display: inline-block;
+  margin-top: 16px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--indigo);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 22px;
+  cursor: pointer;
+  text-decoration: none;
+}
+/* --indigo lightens dramatically in dark mode (#362C7A -> #9C8BFF) to
+   match the boards, which breaks white text's contrast against it —
+   swap to --bg (near-black in dark mode) instead of inventing a
+   separate color, the same way home.css's own buttons swap fg/bg
+   together rather than fixing one side only. */
+[data-theme="dark"] .result-nudge button,
+[data-theme="dark"] .result-nudge a {
+  color: var(--bg);
+}
+.result-nudge button:hover,
+.result-nudge a:hover {
+  /* Opacity-based, matching home.css's .submit/.claim button.go hover
+     — works in both themes without a separate dark hover color. */
+  opacity: 0.87;
+}
+
+/* The submission box uses homepage-prototype.html's real .hero
+   textarea/.count/.submit design (see app/home.css). Only the error
+   message below is custom — neither prototype has an error state for
+   the submission form. `.hero` itself is not namespaced — it's
+   home.css's, this only reaches into it via a scoped descendant rule. */
+.hero .result-error {
+  font-size: 15px;
+  /* Reuses --heart (the like button's red/pink accent, already
+     theme-aware) instead of a separate hardcoded error color. */
+  color: var(--heart);
+  margin-top: 12px;
+  text-align: left;
+}
+
+/* --- Not from the prototype: the desktop share fallback menu. The
+   prototype's share button has no onclick behavior at all. --- */
+.result-share-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  /* --pop is exactly this: a dropdown/popup surface, already themed —
+     home.css's own "More" category dropdown uses the same token. */
+  background: var(--pop);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px -12px rgba(20, 20, 40, 0.25);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  z-index: 2;
+}
+.result-share-menu button {
+  font-family: inherit;
+  font-size: 15px;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--black);
+}
+.result-share-menu button:hover {
+  /* Matches home.css's .pop button:hover — same hover-fill pattern. */
+  background: var(--chip);
+}

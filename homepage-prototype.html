@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RateMyIdea — homepage prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --text:#111111; --muted:#6E6E6E; --faint:#9A9A9A;
+    --line:#EAEAEA; --panel:rgba(255,255,255,.72);
+    --indigo:#362C7A; --periwinkle:#6C5CE0; --heart:#E0245E;
+    --merit-bg:#F3F2FD; --merit-line:#E3E0F7; --merit-tag:#362C7A;
+    --hl-bg:#FDF3EC; --hl-line:#F3E1D3; --hl-tag:#B4703C;
+    --aur1:#E8E4FA; --aur2:#FBE4EE; --aur3:#DFF3E9; --aur4:#FDEBDD; --aur5:#E2EFFB;
+    --aur-op:.5; --btn-bg:#111111; --btn-fg:#FFFFFF; --chip:#F4F4F4; --pop:#FFFFFF;
+  }
+  [data-theme="dark"]{
+    --bg:#0D0D0D; --text:#FFFFFF; --muted:#9A9A9A; --faint:#6E6E6E;
+    --line:#242424; --panel:rgba(22,22,22,.6);
+    --indigo:#9C8BFF; --periwinkle:#9C8BFF; --heart:#FF4D7E;
+    --merit-bg:#191733; --merit-line:#2B2750; --merit-tag:#A99BFF;
+    --hl-bg:#2A1F16; --hl-line:#3E2F22; --hl-tag:#E0A265;
+    --aur1:#4B3FA8; --aur2:#8A3E70; --aur3:#2C6B57; --aur4:#8A5A2C; --aur5:#2C4E7A;
+    --aur-op:.26; --btn-bg:#FFFFFF; --btn-fg:#111111; --chip:#1C1C1C; --pop:#161616;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);
+    font-family:'Carlito',Calibri,'Segoe UI',system-ui,sans-serif;
+    font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;transition:background .3s ease,color .3s ease}
+  .aurora{position:absolute;top:-200px;left:50%;transform:translateX(-50%);
+    width:1150px;height:820px;pointer-events:none;filter:blur(95px);opacity:var(--aur-op);z-index:0}
+  .blob{position:absolute;border-radius:50%}
+  .b1{width:470px;height:470px;background:var(--aur1);top:40px;left:50px}
+  .b2{width:410px;height:410px;background:var(--aur2);top:0;right:110px}
+  .b3{width:350px;height:350px;background:var(--aur3);top:330px;left:310px}
+  .b4{width:310px;height:310px;background:var(--aur4);top:270px;right:50px}
+  .b5{width:290px;height:290px;background:var(--aur5);top:370px;left:50px}
+
+  .wrap{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:0 24px 70px}
+
+  header{padding:32px 0 0;display:flex;align-items:center;justify-content:space-between}
+  .brandwrap{display:flex;align-items:center;gap:9px}
+  .mark{width:8px;height:8px;border-radius:50%;background:var(--periwinkle)}
+  .brand{font-size:13.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
+  .brand b{color:var(--text);font-weight:700}
+  .toggle{background:transparent;border:1px solid var(--line);border-radius:999px;
+    width:34px;height:34px;cursor:pointer;color:var(--muted);font-size:15px;
+    display:flex;align-items:center;justify-content:center;font-family:inherit}
+  .toggle:hover{border-color:var(--periwinkle);color:var(--text)}
+
+  .hero{padding:74px 0 0;text-align:center}
+  h1{font-size:clamp(42px,9vw,72px);font-weight:700;line-height:1.03;letter-spacing:-.035em}
+  h1 em{font-style:normal;color:var(--indigo)}
+
+  textarea{width:100%;margin-top:40px;min-height:118px;resize:vertical;
+    background:var(--panel);backdrop-filter:blur(10px);
+    border:1px solid var(--line);border-radius:16px;
+    font-family:inherit;font-size:18px;line-height:1.5;color:var(--text);padding:20px 22px}
+  textarea::placeholder{color:var(--faint)}
+  textarea:focus{outline:2px solid var(--periwinkle);outline-offset:1px;border-color:transparent}
+  .count{text-align:right;font-size:13.5px;color:var(--faint);margin-top:8px}
+  .submit{width:100%;margin-top:12px;font-family:inherit;font-size:17px;font-weight:700;
+    background:var(--btn-bg);color:var(--btn-fg);border:0;border-radius:999px;padding:16px;
+    cursor:pointer;transition:opacity .2s ease}
+  .submit:hover:not(:disabled){opacity:.87}
+  .submit:disabled{opacity:.3;cursor:not-allowed}
+
+  .caveat{margin:20px auto 0;font-size:15px;color:var(--muted);max-width:52ch}
+  .caveat a{color:var(--text);text-decoration:underline;text-underline-offset:3px}
+
+  .live{margin-top:44px;display:flex;justify-content:center;align-items:center;
+    gap:22px;flex-wrap:wrap;padding:13px 0;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    font-size:14px;color:var(--muted)}
+  .live b{font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+  .live b.scored{color:var(--merit-tag)}
+  .live b.earned{color:var(--hl-tag)}
+  .live .full{color:var(--muted);text-decoration:none;font-weight:700;white-space:nowrap}
+  .live .full:hover{color:var(--text)}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#2FBF71;
+    margin-right:6px;vertical-align:1px;animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  section{margin-top:56px}
+  .banner{border-radius:20px;padding:24px 26px 26px}
+  .banner.merit{background:var(--merit-bg);border:1px solid var(--merit-line)}
+  .banner.highlight{background:var(--hl-bg);border:1px solid var(--hl-line)}
+  .banner h2{font-size:23px;font-weight:700;letter-spacing:-.018em}
+  .banner .tag{display:block;font-size:12px;letter-spacing:.13em;text-transform:uppercase;margin:6px 0 12px}
+  .banner.merit .tag{color:var(--merit-tag)}
+  .banner.highlight .tag{color:var(--hl-tag)}
+  .banner p{font-size:16px;color:var(--muted);max-width:48ch}
+  .banner .more{display:inline-block;margin-top:14px;font-size:15px;font-weight:700;
+    color:var(--text);text-decoration:none;border-bottom:1.5px solid var(--text);padding-bottom:1px}
+
+  .claim{padding:26px 4px 22px;text-align:center}
+  .claim .lead{font-size:clamp(20px,3.8vw,26px);font-weight:700;letter-spacing:-.02em;
+    display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+  .step{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+    background:transparent;color:var(--muted);font-family:inherit;font-size:19px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0}
+  .step:hover:not(:disabled){border-color:var(--periwinkle);color:var(--text)}
+  .step:disabled{opacity:.28;cursor:not-allowed}
+  .field{display:inline-flex;align-items:baseline;gap:1px;
+    border-bottom:2px solid var(--line);padding:0 2px}
+  .field:focus-within{border-color:var(--periwinkle)}
+  .field .cur{font-size:inherit;font-weight:700;color:var(--indigo)}
+  .field input{border:0;background:transparent;font-family:inherit;font-size:inherit;
+    font-weight:700;color:var(--indigo);text-align:center;padding:0;outline:0;
+    font-variant-numeric:tabular-nums;letter-spacing:.01em;width:4ch}
+  .claim .note{font-size:14.5px;color:var(--muted);margin-top:12px}
+  .claim .note b{color:var(--text)}
+  .claim button.go{margin-top:18px;font-family:inherit;font-size:16px;font-weight:700;
+    background:var(--btn-bg);color:var(--btn-fg);border:0;border-radius:999px;
+    padding:13px 34px;cursor:pointer}
+  .claim button.go:hover{opacity:.87}
+
+  .ranges{display:flex;align-items:center;gap:11px;flex-wrap:wrap;padding:16px 0 2px;font-size:14.5px}
+  .ranges button{background:none;border:0;font-family:inherit;font-size:14.5px;
+    color:var(--muted);cursor:pointer;padding:2px 0}
+  .ranges button:hover{color:var(--text)}
+  .ranges button.on{color:var(--text);font-weight:700;text-decoration:underline;text-underline-offset:4px}
+  .ranges i{color:var(--line);font-style:normal}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;padding:14px 0 4px;position:relative}
+  .tab{font-family:inherit;font-size:14px;background:var(--chip);
+    border:1px solid transparent;border-radius:999px;padding:7px 15px;cursor:pointer;color:var(--muted)}
+  .tab:hover{color:var(--text)}
+  .tab.on{background:var(--text);color:var(--bg);font-weight:700}
+  .moreWrap{position:relative}
+  .pop{position:absolute;top:calc(100% + 7px);left:0;z-index:20;
+    background:var(--pop);border:1px solid var(--line);border-radius:14px;
+    padding:7px;min-width:186px;box-shadow:0 16px 40px -20px rgba(0,0,0,.4);display:none}
+  .pop.open{display:block}
+  .pop button{display:block;width:100%;text-align:left;background:none;border:0;
+    font-family:inherit;font-size:14.5px;color:var(--muted);padding:8px 11px;
+    border-radius:9px;cursor:pointer}
+  .pop button:hover{background:var(--chip);color:var(--text)}
+
+  .hl{border:1px solid var(--line);border-radius:16px;padding:18px 20px;
+    background:var(--panel);backdrop-filter:blur(10px);margin-bottom:11px;
+    display:flex;align-items:flex-start;gap:16px}
+  .logo{flex-shrink:0;width:46px;height:46px;border-radius:12px;
+    background:var(--chip);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-size:19px;font-weight:700;color:var(--muted)}
+  .hl .body{flex:1;min-width:0}
+  .hl .body p{font-size:16.5px;line-height:1.45}
+  .hl .meta{display:flex;align-items:center;gap:14px;margin-top:9px;flex-wrap:wrap;
+    font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .hl .right{flex-shrink:0;text-align:right}
+  .hl .amt{font-size:27px;font-weight:700;color:var(--indigo);
+    font-variant-numeric:tabular-nums;letter-spacing:.01em;line-height:1}
+  .hl .go{display:block;margin-top:7px;font-size:14px;font-weight:700;
+    color:var(--muted);text-decoration:none;white-space:nowrap}
+  .hl .go:hover{color:var(--text)}
+
+  .row{display:grid;grid-template-columns:30px 1fr auto;gap:14px;align-items:center;
+    padding:15px 0;border-bottom:1px solid var(--line)}
+  .row .n{font-size:14px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .row .idea{font-size:16.5px;line-height:1.4}
+  .row .idea span{display:block;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--faint);margin-top:4px}
+  .row .end{display:flex;align-items:center;gap:16px}
+  .row .sc{font-size:22px;font-weight:700;color:var(--indigo);
+    font-variant-numeric:tabular-nums;letter-spacing:.01em;
+    min-width:3ch;text-align:right}
+  .heart{background:transparent;border:0;cursor:pointer;font-family:inherit;font-size:14px;
+    color:var(--faint);display:flex;align-items:center;gap:5px;padding:4px}
+  .heart span{min-width:3.5ch;text-align:right;font-variant-numeric:tabular-nums}
+  .heart svg{width:17px;height:17px;transition:transform .2s ease}
+  .heart:hover svg{transform:scale(1.18)}
+  .heart.on{color:var(--heart)}
+  .heart.on svg path{fill:var(--heart);stroke:var(--heart)}
+
+  footer{margin-top:70px;padding-top:26px;border-top:1px solid var(--line);text-align:center}
+  .flinks{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;font-size:14.5px;margin-bottom:8px}
+  .flinks a{color:var(--muted);text-decoration:none}
+  .flinks a:hover{color:var(--text)}
+  .flinks a.lead{color:var(--text);font-weight:700}
+  .byline{font-size:14.5px;color:var(--faint);margin-top:16px;
+    display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+  .byline img{width:26px;height:26px;border-radius:50%;border:1px solid var(--line)}
+  .byline a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line)}
+  .byline a:hover{color:var(--text)}
+  .built{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+  .built p{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-bottom:11px}
+  .built .set{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+  .built a{display:inline-flex;align-items:center;gap:7px;font-size:14px;color:var(--muted);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+  .built a:hover{color:var(--text);border-color:var(--periwinkle)}
+
+  @media(max-width:600px){
+    .hero{padding-top:50px}
+    .row{grid-template-columns:22px 1fr auto;gap:11px}
+    .row .end{gap:11px}
+    .hl{gap:12px;padding:16px}
+    .hl .amt{font-size:22px}
+  }
+</style>
+</head>
+<body>
+
+<div class="aurora" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="blob b4"></div><div class="blob b5"></div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <div class="brandwrap"><span class="mark"></span><span class="brand"><b>ratemyidea</b>.fun</span></div>
+    <button class="toggle" onclick="flip()" id="tg" aria-label="Toggle theme">&#9790;</button>
+  </header>
+
+  <div class="hero">
+    <h1>It all starts<br>with an <em>&ldquo;idea&rdquo;</em></h1>
+    <textarea id="ta" maxlength="280" placeholder="Describe your business idea. Be honest and detailed." oninput="upd()"></textarea>
+    <div class="count"><span id="c">0</span>/280</div>
+    <button class="submit" id="btn" disabled>Rate My Idea</button>
+    <p class="caveat">We score how an idea reads in one line, with no context. A working business can score low. <a href="#">How scoring works?</a></p>
+  </div>
+
+  <div class="live">
+    <span><span class="dot"></span><b>47</b> here now</span>
+    <span><b class="scored">3,847</b> ideas scored</span>
+    <span><b class="earned">$4,120</b> earned</span>
+    <a class="full" href="#">Full stats &rarr;</a>
+  </div>
+
+  <section>
+    <div class="banner highlight">
+      <h2>The Highlight Board</h2>
+      <span class="tag">Featured &middot; ranked by spend</span>
+      <p>Pay your way up and have more eyes be fascinated about your idea. Starts at $4.</p>
+      <a class="more" href="#">Get Featured &rarr;</a>
+    </div>
+
+    <div class="claim">
+      <div class="lead">
+        <span>Highlight your Idea for</span>
+        <button class="step" onclick="bump(-1)" id="minus" aria-label="Lower">&minus;</button>
+        <span class="field"><span class="cur">$</span><input id="bid" value="4" inputmode="numeric"
+          oninput="typed()" onblur="settle()" aria-label="Amount"></span>
+        <button class="step" onclick="bump(1)" aria-label="Raise">+</button>
+      </div>
+      <p class="note">Any amount puts you on the board. <b id="topline"></b></p>
+      <button class="go">Highlight</button>
+    </div>
+
+    <div class="ranges" id="hlRanges"></div>
+    <div class="tabs" id="hlTabs"></div>
+    <div id="hlList"></div>
+  </section>
+
+  <section>
+    <div class="banner merit">
+      <h2>The Merit Board</h2>
+      <span class="tag">Free &middot; ranked by score</span>
+      <p>Every idea lands here, ordered by what it scored. Money cannot move it up, unless highlighted.</p>
+      <a class="more" href="#">See the Full Board &rarr;</a>
+    </div>
+    <div class="ranges" id="mtRanges"></div>
+    <div class="tabs" id="mtTabs"></div>
+    <div id="board"></div>
+  </section>
+
+  <footer>
+    <div class="flinks"><a class="lead" href="#">How scoring works?</a></div>
+    <div class="flinks"><a href="#">Terms</a><a href="#">Refunds</a><a href="#">Contact</a></div>
+    <div class="byline">
+      <span>ratemyidea.fun - a fun side project by <a href="https://x.com/yoursansh33">@yoursansh33</a></span>
+      <img src="/avatar.jpg" alt="Ansh Jaisinghani" onerror="this.src='https://unavatar.io/x/yoursansh33'">
+    </div>
+    <div class="built">
+      <p>Built with</p>
+      <div class="set">
+        <a href="https://claude.ai" target="_blank" rel="noopener">Claude AI</a>
+        <a href="https://claude.com/product/claude-code" target="_blank" rel="noopener">Claude Code</a>
+        <a href="https://vercel.com" target="_blank" rel="noopener">Vercel</a>
+        <a href="https://dodopayments.com" target="_blank" rel="noopener">Dodo Payments</a>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+var HEART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20.7l-1.4-1.3C5.4 14.6 2 11.5 2 7.9 2 5.1 4.2 3 7 3c1.7 0 3.3.8 4 2 .8-1.2 2.4-2 4-2 2.9 0 5 2.1 5 4.9 0 3.6-3.4 6.7-8.6 11.5z"/></svg>';
+
+var CATS = ["All","Fintech","Saas","Hardware","Health","Marketplace","Food",
+            "Sustainability","Consumer app","AI","Education","Gaming","Media","Ecommerce","Other"];
+var VISIBLE = 7;
+
+var TOP_BID = 480, MIN_BID = 4, MAX_BID = 500000;
+var bid = MIN_BID;
+
+var HL_SEED = [
+  ["V","Compliance tooling for Indian D2C brands facing the new packaging rules.","Saas",480,1284],
+  ["A","A restaurant that serves food based on the doshas of your body.","Food",260,963],
+  ["L","Refurbished lab equipment marketplace for university research groups.","Marketplace",145,511],
+  ["N","Remote monitoring for dialysis patients between clinic visits.","Health",90,288],
+  ["K","Freight matching for short-haul routes ignored by the big platforms.","Marketplace",64,204],
+  ["S","Soil nutrient testing kits priced for smallholder farms.","Sustainability",48,177],
+  ["R","Payroll built for restaurants running three shifts a day.","Saas",36,142],
+  ["D","Battery health diagnostics for used electric two-wheelers.","Hardware",28,119],
+  ["M","Insurance claims paperwork handled for small clinics.","Health",19,96],
+  ["T","Ghost kitchen equipment leasing by the month.","Food",12,71],
+  ["B","Bulk spice sourcing direct from growers for small restaurants.","Ecommerce",8,44],
+  ["P","Practice management for independent physiotherapists.","Saas",4,21]
+];
+
+var SEED = [
+  [77,"Payments infrastructure for a country most providers refuse to serve","Fintech",34],
+  [74,"Regulatory-compliant payment rails for cannabis dispensaries","Fintech",28],
+  [71,"Closed-loop lithium-ion battery recycling with patented extraction","Sustainability",19],
+  [69,"Proprietary crop disease sensor hardware for early detection","Hardware",22],
+  [66,"Underwriting software for small business loans in avoided regions","Fintech",11],
+  [66,"Real-time water leak detection hardware for apartment buildings","Hardware",9],
+  [65,"Genomic testing panel for rare pediatric diseases","Health",15],
+  [64,"Underwater drone rental for marine researchers","Hardware",7],
+  [63,"Specialised ERP for shipyards and marine construction","Saas",4],
+  [62,"Managed backup infrastructure for hospital records","Saas",6]
+];
+
+var BOARD = SEED.slice();
+for (var i = 0; i < 52; i++){
+  var b = SEED[i % SEED.length];
+  BOARD.push([Math.max(6, b[0] - 8 - i), b[1], b[2], Math.max(0, b[3] - i)]);
+}
+BOARD.sort(function(a,b){ return b[0] - a[0]; });
+
+var hlCat = "All", hlRange = 10, mtCat = "All", mtRange = 10;
+
+/* ---- amount control ---- */
+function stepSize(v){
+  if (v < 10) return 1;
+  if (v < 50) return 5;
+  if (v < 200) return 10;
+  if (v < 1000) return 50;
+  if (v < 10000) return 500;
+  return 5000;
+}
+function paint(){
+  var f = document.getElementById('bid');
+  f.value = bid.toLocaleString();
+  f.style.width = Math.max(2, f.value.length + 0.5) + 'ch';
+  document.getElementById('minus').disabled = bid <= MIN_BID;
+  document.getElementById('topline').textContent =
+    bid > TOP_BID ? 'That takes the top spot.' : '$' + (TOP_BID + 1).toLocaleString() + ' takes the top spot.';
+}
+function bump(dir){
+  bid = dir > 0 ? bid + stepSize(bid) : bid - stepSize(bid - 1);
+  clamp(); paint();
+}
+function clamp(){
+  if (isNaN(bid) || bid < MIN_BID) bid = MIN_BID;
+  if (bid > MAX_BID) bid = MAX_BID;
+}
+function typed(){
+  var f = document.getElementById('bid');
+  var raw = f.value.replace(/[^0-9]/g, '');
+  f.value = raw;
+  f.style.width = Math.max(2, raw.length + 0.5) + 'ch';
+  bid = parseInt(raw || '0', 10);
+  document.getElementById('topline').textContent =
+    bid > TOP_BID ? 'That takes the top spot.' : '$' + (TOP_BID + 1).toLocaleString() + ' takes the top spot.';
+}
+function settle(){ clamp(); paint(); }
+
+/* ---- category pills with overflow ---- */
+function tabs(id, active, fn){
+  var vis = CATS.slice(0, VISIBLE), rest = CATS.slice(VISIBLE);
+  if (rest.indexOf(active) > -1) vis.push(active);
+  var html = vis.map(function(c){
+    return '<button class="tab' + (c === active ? ' on' : '') + '" onclick="' + fn + '(\'' + c + '\')">' + c + '</button>';
+  }).join('');
+  if (rest.length){
+    html += '<span class="moreWrap"><button class="tab" onclick="popup(\'' + id + '\')">More &#9662;</button>' +
+      '<span class="pop" id="' + id + 'Pop">' +
+      rest.map(function(c){ return '<button onclick="' + fn + '(\'' + c + '\')">' + c + '</button>'; }).join('') +
+      '</span></span>';
+  }
+  document.getElementById(id).innerHTML = html;
+}
+function popup(id){
+  var el = document.getElementById(id + 'Pop');
+  var wasOpen = el.classList.contains('open');
+  document.querySelectorAll('.pop').forEach(function(p){ p.classList.remove('open'); });
+  if (!wasOpen) el.classList.add('open');
+}
+document.addEventListener('click', function(e){
+  if (!e.target.closest('.moreWrap'))
+    document.querySelectorAll('.pop').forEach(function(p){ p.classList.remove('open'); });
+});
+
+/* ---- range selector ---- */
+function ranges(total, current, fn){
+  var out = [], steps = [3,10,20,50];
+  steps.forEach(function(s){ if (total >= s) out.push(['Top ' + s, s]); });
+  if (total > 50){
+    for (var s = 51; s <= total; s += 50){
+      out.push([s + '&ndash;' + Math.min(s + 49, total), -s]);
+    }
+  }
+  return out.map(function(r, i){
+    return (i ? '<i>|</i>' : '') +
+      '<button class="' + (r[1] === current ? 'on' : '') + '" onclick="' + fn + '(' + r[1] + ')">' + r[0] + '</button>';
+  }).join('');
+}
+function slice(rows, range){
+  if (range > 0) return [rows.slice(0, range), 0];
+  var off = -range - 1;
+  return [rows.slice(off, off + 50), off];
+}
+
+/* ---- highlight board ---- */
+function hlRangeSet(v){ hlRange = v; drawHL(hlCat); }
+function hlCatSet(c){ hlCat = c; hlRange = 10; drawHL(c); }
+function drawHL(cat){
+  hlCat = cat;
+  tabs('hlTabs', cat, 'hlCatSet');
+  var rows = HL_SEED.filter(function(h){ return cat === "All" || h[2] === cat; });
+  document.getElementById('hlRanges').innerHTML = ranges(rows.length, hlRange, 'hlRangeSet');
+  var s = slice(rows, hlRange);
+  document.getElementById('hlList').innerHTML = s[0].map(function(h){
+    return '<div class="hl">' +
+      '<div class="logo">' + h[0] + '</div>' +
+      '<div class="body"><p>' + h[1] + '</p>' +
+        '<div class="meta"><span>' + h[2] + '</span><span>' + h[4].toLocaleString() + ' visits</span></div>' +
+      '</div>' +
+      '<div class="right"><div class="amt">$' + h[3].toLocaleString() + '</div>' +
+        '<a class="go" href="#">View &rarr;</a></div>' +
+    '</div>';
+  }).join('') || '<p style="color:var(--faint);font-size:15px;padding:8px 0">Nothing featured here yet.</p>';
+}
+
+/* ---- merit board ---- */
+function mtRangeSet(v){ mtRange = v; drawMT(mtCat); }
+function mtCatSet(c){ mtCat = c; mtRange = 10; drawMT(c); }
+function drawMT(cat){
+  mtCat = cat;
+  tabs('mtTabs', cat, 'mtCatSet');
+  var rows = BOARD.filter(function(r){ return cat === "All" || r[2] === cat; });
+  document.getElementById('mtRanges').innerHTML = ranges(rows.length, mtRange, 'mtRangeSet');
+  var s = slice(rows, mtRange), off = s[1];
+  document.getElementById('board').innerHTML = s[0].map(function(r, i){
+    return '<div class="row">' +
+      '<div class="n">' + (off + i + 1) + '</div>' +
+      '<div class="idea">' + r[1] + '<span>' + r[2] + '</span></div>' +
+      '<div class="end"><div class="sc">' + r[0] + '</div>' +
+        '<button class="heart" onclick="like(this)">' + HEART + '<span>' + r[3] + '</span></button></div>' +
+    '</div>';
+  }).join('') || '<p style="color:var(--faint);font-size:15px;padding:14px 0">No ideas in this category yet.</p>';
+}
+
+function like(b){
+  var n = b.querySelector('span'), v = parseInt(n.textContent, 10);
+  if (b.classList.contains('on')){ b.classList.remove('on'); n.textContent = v - 1; }
+  else { b.classList.add('on'); n.textContent = v + 1; }
+}
+function upd(){
+  var t = document.getElementById('ta');
+  document.getElementById('c').textContent = t.value.length;
+  document.getElementById('btn').disabled = t.value.trim().length === 0;
+}
+function flip(){
+  var d = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', d ? 'light' : 'dark');
+  document.getElementById('tg').innerHTML = d ? '&#9790;' : '&#9728;';
+}
+
+drawHL("All");
+drawMT("All");
+paint();
+</script>
+</body>
+</html>

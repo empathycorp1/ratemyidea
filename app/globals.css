@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #111312;
+}
+
+/*
+  Design tokens for RateMyIdea.
+  Each --color-* / --font-* variable below becomes a Tailwind utility
+  automatically (Tailwind v4 reads this @theme block). For example
+  --color-indigo below gives you className="text-indigo" / "bg-indigo".
+*/
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Brand colors */
+  --color-indigo: #362c7a;
+  --color-periwinkle: #6c5ce0;
+  --color-near-black: #111312;
+  --color-grey: #6f7773;
+
+  /* Pastel accents */
+  --color-mint: #dff3e9;
+  --color-lavender: #e8e4fa;
+  --color-blush: #fbe4ee;
+  --color-peach: #fdebdd;
+  --color-sky: #e2effb;
+
+  /* Fonts */
+  --font-sans: "Carlito", "Calibri", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}

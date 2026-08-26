@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RateMyIdea — share card options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --indigo:#362C7A;
+    --periwinkle:#6C5CE0;
+    --black:#111312;
+    --grey:#6F7773;
+    --grey-soft:#9AA19D;
+    --line:#EAEDEB;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#F4F5F7;
+    font-family:'Carlito',Calibri,'Segoe UI',system-ui,sans-serif;
+    padding:44px 24px 80px;
+    color:var(--black);
+  }
+  .page{max-width:1000px;margin:0 auto}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.02em}
+  .sub{color:var(--grey);margin-top:8px;font-size:16px;max-width:60ch}
+  h2{
+    font-size:12px;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--grey-soft);font-weight:400;margin:52px 0 14px;
+  }
+
+  /* card scaled to fit */
+  .stage{
+    width:100%;max-width:960px;aspect-ratio:1200/630;
+    position:relative;overflow:hidden;border-radius:10px;
+    box-shadow:0 10px 40px -18px rgba(20,20,40,.4);
+  }
+  .card{
+    position:absolute;top:0;left:0;
+    width:1200px;height:630px;
+    transform-origin:top left;
+    display:flex;flex-direction:column;
+    padding:62px 68px 58px;
+  }
+
+  /* light theme */
+  .light{background:#FFFFFF}
+  .light .idea{color:#555555}
+  .light .verdict{color:#111111}
+  .light .score{color:var(--indigo)}
+  .light .meta{color:#6E6E6E}
+  .light .rule{background:#E5E5E5}
+  .light .glow1{background:#E8E4FA}
+  .light .glow2{background:#FBE4EE}
+  .light .glow3{background:#DFF3E9}
+
+  /* dark theme */
+  .dark{background:#0D0D0D}
+  .dark .idea{color:#A0A0A0}
+  .dark .verdict{color:#FFFFFF}
+  .dark .score{color:#9C8BFF}
+  .dark .meta{color:#777777}
+  .dark .rule{background:#2A2A2A}
+  .dark .glow1{background:#4B3FA8}
+  .dark .glow2{background:#8A3E70}
+  .dark .glow3{background:#2C6B57}
+
+  .glow{position:absolute;border-radius:50%;filter:blur(110px);pointer-events:none}
+  .light .glow{opacity:.58}
+  .dark .glow{opacity:.30}
+  .glow1{width:520px;height:520px;top:-190px;right:-90px}
+  .glow2{width:420px;height:420px;bottom:-200px;right:180px}
+  .glow3{width:380px;height:380px;bottom:-190px;left:-110px}
+
+  .inner{position:relative;z-index:1;display:flex;flex-direction:column;height:100%}
+
+  .top{display:flex;justify-content:space-between;align-items:center}
+  .brand{font-size:21px;letter-spacing:.1em;text-transform:uppercase;color:#8A8A8A}
+  .light .brand b{color:#111111;font-weight:700}
+  .dark .brand b{color:#FFFFFF;font-weight:700}
+  .meta{font-size:19px;letter-spacing:.06em;text-transform:uppercase}
+  .rank{font-size:21px;font-weight:700;letter-spacing:.05em}
+  .light .rank{color:#111111}
+  .dark .rank{color:#FFFFFF}
+
+  .body{flex:1;display:flex;align-items:center;gap:60px;padding:10px 0}
+  .left{flex:1;min-width:0}
+  .idea{font-size:26px;line-height:1.4;margin-bottom:26px}
+  .verdict{font-size:46px;line-height:1.22;letter-spacing:-.022em;font-weight:700}
+
+  .right{flex-shrink:0;text-align:right}
+  .score{font-size:210px;line-height:.82;letter-spacing:-.05em;font-weight:700}
+  .outof{font-size:24px;letter-spacing:.08em;margin-top:10px}
+
+  .rule{height:1px;width:100%}
+  .foot{padding-top:26px;display:flex;justify-content:space-between;align-items:center}
+  .foot span{font-size:20px}
+  .light .foot .cta{color:#111111;font-weight:700}
+  .dark .foot .cta{color:#FFFFFF;font-weight:700}
+
+  .note{
+    margin-top:16px;font-size:15px;color:var(--grey);max-width:62ch;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Share card — four states</h1>
+  <p class="sub">Real output from your scorer, at true 1200&times;630 proportions. Judge these at arm's length and squinted, because that is roughly how they appear in a timeline.</p>
+
+  <h2>Light · low score</h2>
+  <div class="stage" data-card>
+    <div class="card light">
+      <div class="glow glow1"></div><div class="glow glow2"></div><div class="glow glow3"></div>
+      <div class="inner">
+        <div class="top">
+          <div class="brand"><b>ratemyidea</b>.fun</div>
+          <div class="meta rank">Ranked 3,214 of 3,847</div>
+        </div>
+        <div class="body">
+          <div class="left">
+            <p class="idea">A new social network to replace Twitter.</p>
+            <p class="verdict">Twitter's problem is moderation and trust, not the existence of a platform. You have neither.</p>
+          </div>
+          <div class="right">
+            <div class="score">12</div>
+            <div class="outof meta">OUT OF 100</div>
+          </div>
+        </div>
+        <div class="rule"></div>
+        <div class="foot">
+          <span class="meta">SOCIAL</span>
+          <span class="cta">Rate yours &rarr;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Light · high score</h2>
+  <div class="stage" data-card>
+    <div class="card light">
+      <div class="glow glow1"></div><div class="glow glow2"></div><div class="glow glow3"></div>
+      <div class="inner">
+        <div class="top">
+          <div class="brand"><b>ratemyidea</b>.fun</div>
+          <div class="meta rank">Ranked 4 of 3,847</div>
+        </div>
+        <div class="body">
+          <div class="left">
+            <p class="idea">Payments infrastructure for a country most providers refuse to serve.</p>
+            <p class="verdict">Regulatory relationships and compliance infrastructure are the real moat, not the technology.</p>
+          </div>
+          <div class="right">
+            <div class="score">77</div>
+            <div class="outof meta">OUT OF 100</div>
+          </div>
+        </div>
+        <div class="rule"></div>
+        <div class="foot">
+          <span class="meta">FINTECH</span>
+          <span class="cta">Rate yours &rarr;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Dark · low score</h2>
+  <div class="stage" data-card>
+    <div class="card dark">
+      <div class="glow glow1"></div><div class="glow glow2"></div><div class="glow glow3"></div>
+      <div class="inner">
+        <div class="top">
+          <div class="brand"><b>ratemyidea</b>.fun</div>
+          <div class="meta rank">Ranked 3,102 of 3,847</div>
+        </div>
+        <div class="body">
+          <div class="left">
+            <p class="idea">Uber, but for lawn care in suburban neighbourhoods.</p>
+            <p class="verdict">TaskRabbit and LawnStarter already solve this. You are offering no reason to switch.</p>
+          </div>
+          <div class="right">
+            <div class="score">20</div>
+            <div class="outof meta">OUT OF 100</div>
+          </div>
+        </div>
+        <div class="rule"></div>
+        <div class="foot">
+          <span class="meta">MARKETPLACE</span>
+          <span class="cta">Rate yours &rarr;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Dark · high score</h2>
+  <div class="stage" data-card>
+    <div class="card dark">
+      <div class="glow glow1"></div><div class="glow glow2"></div><div class="glow glow3"></div>
+      <div class="inner">
+        <div class="top">
+          <div class="brand"><b>ratemyidea</b>.fun</div>
+          <div class="meta rank">Ranked 11 of 3,847</div>
+        </div>
+        <div class="body">
+          <div class="left">
+            <p class="idea">Regulatory-compliant payment rails for cannabis dispensaries.</p>
+            <p class="verdict">Cannabis banking is genuinely blocked by federal law. Solving it requires relationships, not code.</p>
+          </div>
+          <div class="right">
+            <div class="score">74</div>
+            <div class="outof meta">OUT OF 100</div>
+          </div>
+        </div>
+        <div class="rule"></div>
+        <div class="foot">
+          <span class="meta">FINTECH</span>
+          <span class="cta">Rate yours &rarr;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">Note: the verdict is the largest text, not the score. The number stops the scroll; the sentence is what gets read and quoted. If a card works with the number covered, the design is right.</p>
+
+</div>
+
+<script>
+function fit(){
+  document.querySelectorAll('[data-card]').forEach(function(stage){
+    var card = stage.querySelector('.card');
+    var s = stage.clientWidth / 1200;
+    card.style.transform = 'scale(' + s + ')';
+  });
+}
+window.addEventListener('resize', fit);
+window.addEventListener('load', fit);
+fit();
+</script>
+</body>
+</html>

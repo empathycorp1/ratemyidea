@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RateMyIdea — result page prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --indigo:#362C7A;
+    --periwinkle:#6C5CE0;
+    --black:#111111;
+    --grey:#6E6E6E;
+    --grey-soft:#9A9A9A;
+    --line:#EAEAEA;
+    --mint:#DFF3E9;--lavender:#E8E4FA;--blush:#FBE4EE;--peach:#FDEBDD;--sky:#E2EFFB;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#fff;color:var(--black);
+    font-family:'Carlito',Calibri,'Segoe UI',system-ui,sans-serif;
+    font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;min-height:100vh;
+  }
+  .aurora{position:absolute;top:-220px;left:50%;transform:translateX(-50%);
+    width:1100px;height:800px;pointer-events:none;filter:blur(95px);opacity:.5;z-index:0}
+  .blob{position:absolute;border-radius:50%}
+  .b1{width:460px;height:460px;background:var(--lavender);top:40px;left:60px}
+  .b2{width:400px;height:400px;background:var(--blush);top:0;right:120px}
+  .b3{width:340px;height:340px;background:var(--mint);top:320px;left:300px}
+  .b4{width:300px;height:300px;background:var(--peach);top:260px;right:60px}
+  .b5{width:280px;height:280px;background:var(--sky);top:360px;left:60px}
+
+  .wrap{position:relative;z-index:1;max-width:600px;margin:0 auto;padding:0 24px 90px}
+  header{padding:36px 0 0;display:flex;align-items:center;gap:9px}
+  .mark{width:8px;height:8px;border-radius:50%;background:var(--periwinkle)}
+  .brand{font-size:13.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--grey)}
+  .brand b{color:var(--black);font-weight:700}
+
+  /* demo picker, not part of the real design */
+  .picker{margin-top:34px;padding:16px 18px;border:1px dashed #D8D8D8;border-radius:12px;background:#FCFCFC}
+  .picker p{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--grey-soft);margin-bottom:11px}
+  .picker button{
+    font-family:inherit;font-size:14.5px;background:#fff;border:1px solid var(--line);
+    border-radius:999px;padding:7px 15px;margin:0 7px 7px 0;cursor:pointer;color:var(--black);
+  }
+  .picker button:hover{border-color:var(--periwinkle);color:var(--indigo)}
+
+  /* result */
+  .result{padding-top:46px;text-align:center}
+  .submitted{
+    font-size:17px;color:var(--grey);max-width:44ch;margin:0 auto 34px;
+  }
+  .scorewrap{position:relative}
+  .score{
+    font-size:clamp(120px,26vw,180px);line-height:.85;font-weight:700;
+    color:var(--indigo);letter-spacing:.015em;font-variant-numeric:tabular-nums;
+    will-change:transform,opacity;backface-visibility:hidden;
+  }
+  .outof{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--grey-soft);margin-top:14px}
+  .rank{font-size:15px;color:var(--grey);margin-top:8px}
+
+  .reveal{opacity:0;transform:translateY(10px);transition:opacity .55s ease,transform .55s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  .verdict{
+    font-size:clamp(24px,4.6vw,32px);line-height:1.28;font-weight:700;
+    letter-spacing:-.02em;margin:40px auto 0;max-width:22ch;
+  }
+
+  /* breakdown */
+  .breakdown{margin-top:52px;text-align:left}
+  .breakdown h3{
+    font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--grey-soft);font-weight:400;margin-bottom:20px;text-align:center;
+  }
+  .row{margin-bottom:17px}
+  .rowtop{display:flex;justify-content:space-between;font-size:15.5px;margin-bottom:7px}
+  .rowtop b{font-weight:400}
+  .rowtop span{color:var(--grey);font-variant-numeric:tabular-nums}
+  .info{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:16px;height:16px;margin-left:7px;border-radius:50%;
+    border:1px solid #D3D3D3;background:transparent;cursor:pointer;
+    font-family:inherit;font-size:11px;font-style:italic;color:var(--grey-soft);
+    line-height:1;padding:0;vertical-align:1px;
+  }
+  .info:hover{border-color:var(--periwinkle);color:var(--indigo)}
+  .explain{
+    max-height:0;overflow:hidden;opacity:0;
+    transition:max-height .35s ease,opacity .3s ease,margin .35s ease;
+    font-size:15px;color:var(--grey);
+  }
+  .explain.open{max-height:120px;opacity:1;margin-top:9px}
+  .track{height:6px;background:#F0F0F0;border-radius:99px;overflow:hidden}
+  .fill{height:100%;width:0;background:var(--periwinkle);border-radius:99px;
+    transition:width .9s cubic-bezier(.2,.8,.2,1)}
+
+  /* low score note */
+  .note{
+    margin-top:40px;border-radius:16px;padding:22px 24px;
+    background:linear-gradient(140deg,#F3F2FD 0%,#FDF1F6 100%);
+    border:1px solid #E9E5F5;text-align:left;
+  }
+  .note b{display:block;margin-bottom:6px}
+  .note p{font-size:16px;color:#3A3A3A}
+
+  /* actions */
+  .actions{margin-top:40px;display:flex;gap:11px;flex-wrap:wrap}
+  .btn{
+    flex:1 1 200px;font-family:inherit;font-size:16px;font-weight:700;
+    padding:14px 20px;border-radius:999px;cursor:pointer;border:1px solid var(--black);
+    background:var(--black);color:#fff;
+  }
+  .btn.ghost{background:transparent;color:var(--black)}
+  .btn:hover{opacity:.86}
+
+  /* highlight nudge */
+  .nudge{
+    margin-top:16px;border:1px solid var(--line);border-radius:16px;
+    padding:24px;text-align:left;background:rgba(255,255,255,.8);
+  }
+  .nudge .tag{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--indigo)}
+  .nudge h4{font-size:19px;font-weight:700;margin:8px 0 6px;letter-spacing:-.012em}
+  .nudge p{font-size:15.5px;color:var(--grey)}
+  .nudge button{
+    margin-top:16px;font-family:inherit;font-size:15px;font-weight:700;
+    background:var(--indigo);color:#fff;border:0;border-radius:999px;
+    padding:11px 22px;cursor:pointer;
+  }
+  .nudge button:hover{background:#2A2263}
+
+  .hidden{display:none}
+</style>
+</head>
+<body>
+
+<div class="aurora" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="blob b4"></div><div class="blob b5"></div>
+</div>
+
+<div class="wrap">
+  <header><span class="mark"></span><span class="brand"><b>ratemyidea</b>.fun</span></header>
+
+  <div class="picker">
+    <p>Prototype only — pick a result to watch</p>
+    <button onclick="run(0)">Low · 18</button>
+    <button onclick="run(1)">Middle · 47</button>
+    <button onclick="run(2)">High · 77</button>
+    <div style="margin-top:10px">
+      <button onclick="setDur(3200,this)">3.2s</button>
+      <button onclick="setDur(5000,this)">5s</button>
+      <button onclick="setDur(7000,this)">7s</button>
+    </div>
+  </div>
+
+  <div class="result">
+    <p class="submitted" id="submitted"></p>
+
+    <div class="scorewrap">
+      <div class="score" id="score">0</div>
+      <div class="outof">out of 100</div>
+      <div class="rank reveal" id="rank"></div>
+    </div>
+
+    <p class="verdict reveal" id="verdict"></p>
+
+    <div class="breakdown reveal" id="breakdown">
+      <h3>How it scored</h3>
+      <div id="rows"></div>
+    </div>
+
+    <div class="note reveal hidden" id="note">
+      <b>A low score is a starting point, not a verdict on you.</b>
+      <p>Most ideas score under 30 because the wedge is unclear, not because the idea is worthless. Sharpen who it is for and what makes them switch, then score it again.</p>
+    </div>
+
+    <div class="actions reveal" id="actions">
+      <button class="btn">Share your card</button>
+      <button class="btn ghost">Score another idea</button>
+    </div>
+
+    <div class="nudge reveal" id="nudge">
+      <span class="tag">The Highlight Board</span>
+      <h4 id="nudgeTitle"></h4>
+      <p id="nudgeBody"></p>
+      <button>Highlight this idea</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var DUR = 5000, LAST = 0;
+function setDur(ms, btn){
+  DUR = ms;
+  document.querySelectorAll('.picker button').forEach(function(b){ b.style.borderColor = ''; b.style.color = ''; });
+  btn.style.borderColor = '#6C5CE0'; btn.style.color = '#362C7A';
+  run(LAST);
+}
+
+var MEANS = [
+  "How many times this has already been built. An idea that exists in several funded companies scores near zero here, however well it is executed.",
+  "Whether a stranger would actually hand over money for it. What people say they want and what they pay for are different things.",
+  "Whether a competent developer could rebuild the core of this in two days. Scoring high needs a real moat: proprietary data, network effects, regulation, or genuine technical difficulty.",
+  "Whether this hurts someone today, often and expensively. It also has to still be unsolved. If an established service already handles it well, this scores low even when the pain is real.",
+  "How much of this depends on things that will not happen. Ten means every assumption is reasonable. Zero means it needs people to change ingrained habits, or a large incumbent to cooperate."
+];
+
+function explain(n){
+  var node = document.getElementById('ex' + n);
+  var wasOpen = node.classList.contains('open');
+  document.querySelectorAll('.explain').forEach(function(e){ e.classList.remove('open'); });
+  if (!wasOpen) node.classList.add('open');
+}
+
+var DIMS = [
+  ["Originality", 25],
+  ["Willingness to pay", 25],
+  ["Weekend copy risk", 20],
+  ["Real problem", 20],
+  ["Delusion index", 10]
+];
+
+var DATA = [
+  {idea:"A powerbank product that speaks how much your phone is charged with it.",
+   total:18, rank:"Ranked 34 of 52", parts:[3,5,2,4,4]},
+  {idea:"A subscription service that ships replacement air filters for your home HVAC system on a schedule based on your actual usage.",
+   total:47, rank:"Ranked 9 of 52", parts:[8,14,7,13,5]},
+  {idea:"Payments infrastructure for a country most providers refuse to serve.",
+   total:77, rank:"Ranked 1 of 52", parts:[18,19,16,17,7]}
+];
+
+var VERDICTS = [
+  "A minor convenience feature on a commodity product with no reason to switch from existing powerbanks.",
+  "Solves a real problem but faces entrenched habits and low switching costs for existing suppliers.",
+  "Regulatory relationships and compliance infrastructure are the real moat, not the technology."
+];
+
+function el(id){ return document.getElementById(id); }
+function clearIn(){ document.querySelectorAll('.reveal').forEach(function(n){ n.classList.remove('in'); }); }
+
+function run(i){
+  LAST = i;
+  var d = DATA[i];
+  clearIn();
+  el('note').classList.add('hidden');
+  el('submitted').textContent = d.idea;
+  el('verdict').textContent = VERDICTS[i];
+  el('rank').textContent = d.rank;
+
+  // build breakdown rows, bars at zero
+  var html = "";
+  DIMS.forEach(function(dim, n){
+    html += '<div class="row"><div class="rowtop"><b>' + dim[0] +
+            '<button class="info" onclick="explain(' + n + ')" aria-label="What this means">i</button></b><span>' +
+            d.parts[n] + ' / ' + dim[1] + '</span></div>' +
+            '<div class="track"><div class="fill" data-w="' +
+            (d.parts[n] / dim[1] * 100) + '"></div></div>' +
+            '<div class="explain" id="ex' + n + '">' + MEANS[n] + '</div></div>';
+  });
+  el('rows').innerHTML = html;
+
+  // nudge copy shifts with the score, but never sells exposure to a low scorer
+  if (d.total >= 55) {
+    el('nudgeTitle').textContent = "This one ranks well. Put it where people are looking.";
+    el('nudgeBody').textContent = "Highlighted ideas sit at the top of the board, where founders and investors browsing the site see them first.";
+  } else {
+    el('nudgeTitle').textContent = "Want a second opinion from actual people?";
+    el('nudgeBody').textContent = "Highlighting puts your idea in front of the people browsing the board. The scorer is one opinion. They are several hundred.";
+  }
+
+  countUp(d.total, DUR, function(){
+    // verdict only becomes readable once the number has settled
+    setTimeout(function(){ el('rank').classList.add('in'); }, 60);
+    setTimeout(function(){ el('verdict').classList.add('in'); }, 180);
+    setTimeout(function(){
+      el('breakdown').classList.add('in');
+      document.querySelectorAll('.fill').forEach(function(f, n){
+        setTimeout(function(){ f.style.width = f.dataset.w + '%'; }, n * 90);
+      });
+    }, 620);
+    var t = 1300;
+    if (d.total < 30){
+      setTimeout(function(){ el('note').classList.remove('hidden'); el('note').classList.add('in'); }, t);
+      t += 260;
+    }
+    setTimeout(function(){ el('actions').classList.add('in'); }, t);
+    setTimeout(function(){ el('nudge').classList.add('in'); }, t + 220);
+  });
+}
+
+function countUp(target, dur, done){
+  var node = el('score');
+
+  var amp   = Math.max(2, Math.round(target * 0.06));
+  var peak  = Math.max(target - amp, 0);
+  var split = 0.62;                  // most of the time goes to the climb
+  var start = null, prev = 0;
+
+  function frame(ts){
+    if (!start) start = ts;
+    var p = Math.min((ts - start) / dur, 1);
+    var v;
+
+    if (p < split){
+      // quintic ease-in-out: barely moves at first, then gathers pace
+      var q = p / split;
+      var e = q < 0.5 ? 16*q*q*q*q*q : 1 - Math.pow(-2*q + 2, 5) / 2;
+      v = peak * e;
+    } else {
+      // overshoot, swing back, tighten onto the number
+      var q = (p - split) / (1 - split);
+      v = target - amp * Math.exp(-2.6 * q) * Math.cos(8.2 * q);
+    }
+
+    node.textContent = Math.round(v);
+
+    // faster movement gets softer edges, the way real motion does
+    var vel = Math.abs(v - prev); prev = v;
+    node.style.filter = 'blur(' + Math.min(vel * 1.9, 2.1).toFixed(2) + 'px)';
+
+    // continuous motion the eye reads as smooth, even while the digits step
+    var grow = 0.96 + 0.04 * Math.min(p / split, 1);
+    node.style.transform = 'scale(' + grow + ')';
+    node.style.opacity = (0.62 + 0.38 * Math.min(p / (split * 0.35), 1)).toFixed(3);
+
+    if (p < 1) requestAnimationFrame(frame);
+    else {
+      node.textContent = target;
+      node.style.transform = 'scale(1)';
+      node.style.opacity = '1';
+      node.style.filter = 'blur(0px)';
+      done();
+    }
+  }
+
+  node.style.filter = 'blur(0px)';
+  node.style.transform = 'scale(0.96)';
+  node.style.opacity = '0.62';
+  document.querySelectorAll('.fill').forEach(function(f){ f.style.width = '0'; });
+  requestAnimationFrame(frame);
+}
+
+run(0);
+</script>
+</body>
+</html>

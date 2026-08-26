@@ -1,0 +1,814 @@
+/*
+ * Exact CSS from homepage-prototype.html — light and dark themes both
+ * included (the dark theme is real here, unlike result-page-prototype's
+ * .dark rules, which were explicitly left unbuilt in an earlier task).
+ *
+ * Adaptations:
+ *  - `body{...}` became `.page-shell{...}` (see app/result.css for the
+ *    same adaptation and why — the real <body> is owned by the layout).
+ *  - This file's `.aurora`/`.blob`/`.b1`-`.b5` are now the ONE aurora
+ *    for the whole app. result.css had its own (from
+ *    result-page-prototype.html, which was designed as a standalone
+ *    page); now that the result view renders inside this same shell,
+ *    keeping two conflicting `.aurora`/`.blob` rule sets would collide,
+ *    so result.css's copies were removed and this file's is used
+ *    site-wide.
+ *  - Known gap, not fixed here: the result view's own styling
+ *    (.score/.verdict/.breakdown/etc in result.css) has no dark-theme
+ *    variant — that was explicitly out of scope in the task that built
+ *    it. Toggling dark mode while a result is showing will look
+ *    inconsistent (everything else goes dark, the result stays light)
+ *    until that's addressed separately.
+ */
+
+:root {
+  --bg: #ffffff;
+  --text: #111111;
+  --muted: #6e6e6e;
+  --faint: #9a9a9a;
+  --line: #eaeaea;
+  --panel: rgba(255, 255, 255, 0.72);
+  --indigo: #362c7a;
+  --periwinkle: #6c5ce0;
+  --heart: #e0245e;
+  --merit-bg: #f3f2fd;
+  --merit-line: #e3e0f7;
+  --merit-tag: #362c7a;
+  --hl-bg: #fdf3ec;
+  --hl-line: #f3e1d3;
+  --hl-tag: #b4703c;
+  --aur1: #e8e4fa;
+  --aur2: #fbe4ee;
+  --aur3: #dff3e9;
+  --aur4: #fdebdd;
+  --aur5: #e2effb;
+  --aur-op: 0.5;
+  --btn-bg: #111111;
+  --btn-fg: #ffffff;
+  --chip: #f4f4f4;
+  --pop: #ffffff;
+}
+[data-theme="dark"] {
+  --bg: #0d0d0d;
+  --text: #ffffff;
+  --muted: #9a9a9a;
+  --faint: #6e6e6e;
+  --line: #242424;
+  --panel: rgba(22, 22, 22, 0.6);
+  --indigo: #9c8bff;
+  --periwinkle: #9c8bff;
+  --heart: #ff4d7e;
+  --merit-bg: #191733;
+  --merit-line: #2b2750;
+  --merit-tag: #a99bff;
+  --hl-bg: #2a1f16;
+  --hl-line: #3e2f22;
+  --hl-tag: #e0a265;
+  --aur1: #4b3fa8;
+  --aur2: #8a3e70;
+  --aur3: #2c6b57;
+  --aur4: #8a5a2c;
+  --aur5: #2c4e7a;
+  --aur-op: 0.26;
+  --btn-bg: #ffffff;
+  --btn-fg: #111111;
+  --chip: #1c1c1c;
+  --pop: #161616;
+}
+
+.page-shell {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Carlito", Calibri, "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  /* position:relative isn't in the prototype's body{} rule, but the
+     real <body> gets special browser-level viewport-overflow clipping
+     that a plain nested div doesn't — without this, .aurora
+     (position:absolute, no positioned ancestor otherwise) sizes itself
+     against the viewport instead of this div, escapes overflow-x:hidden
+     entirely, and adds ~390px of real horizontal scroll on mobile.
+     Confirmed via document.documentElement.scrollWidth before/after. */
+  position: relative;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.aurora {
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1150px;
+  height: 820px;
+  pointer-events: none;
+  filter: blur(95px);
+  opacity: var(--aur-op);
+  z-index: 0;
+}
+.blob {
+  position: absolute;
+  border-radius: 50%;
+}
+.b1 {
+  width: 470px;
+  height: 470px;
+  background: var(--aur1);
+  top: 40px;
+  left: 50px;
+}
+.b2 {
+  width: 410px;
+  height: 410px;
+  background: var(--aur2);
+  top: 0;
+  right: 110px;
+}
+.b3 {
+  width: 350px;
+  height: 350px;
+  background: var(--aur3);
+  top: 330px;
+  left: 310px;
+}
+.b4 {
+  width: 310px;
+  height: 310px;
+  background: var(--aur4);
+  top: 270px;
+  right: 50px;
+}
+.b5 {
+  width: 290px;
+  height: 290px;
+  background: var(--aur5);
+  top: 370px;
+  left: 50px;
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 24px 70px;
+}
+
+header {
+  padding: 32px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brandwrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--periwinkle);
+}
+.brand {
+  font-size: 13.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.brand b {
+  color: var(--text);
+  font-weight: 700;
+}
+.toggle {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+.toggle:hover {
+  border-color: var(--periwinkle);
+  color: var(--text);
+}
+
+.hero {
+  padding: 74px 0 0;
+  text-align: center;
+}
+.hero h1 {
+  font-size: clamp(42px, 9vw, 72px);
+  font-weight: 700;
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--indigo);
+}
+
+.hero textarea {
+  width: 100%;
+  margin-top: 40px;
+  min-height: 118px;
+  resize: vertical;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--text);
+  padding: 20px 22px;
+}
+.hero textarea::placeholder {
+  color: var(--faint);
+}
+.hero textarea:focus {
+  outline: 2px solid var(--periwinkle);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.hero .count {
+  text-align: right;
+  font-size: 13.5px;
+  color: var(--faint);
+  margin-top: 8px;
+}
+.hero .submit {
+  width: 100%;
+  margin-top: 12px;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: 0;
+  border-radius: 999px;
+  padding: 16px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.hero .submit:hover:not(:disabled) {
+  opacity: 0.87;
+}
+.hero .submit:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.caveat {
+  margin: 20px auto 0;
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 52ch;
+}
+.caveat a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.live {
+  margin-top: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding: 13px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  color: var(--muted);
+}
+.live b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.live b.scored {
+  color: var(--merit-tag);
+}
+.live b.earned {
+  color: var(--hl-tag);
+}
+.live .full {
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.live .full:hover {
+  color: var(--text);
+}
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2fbf71;
+  margin-right: 6px;
+  vertical-align: 1px;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.page-shell section {
+  margin-top: 56px;
+}
+.banner {
+  border-radius: 20px;
+  padding: 24px 26px 26px;
+}
+.banner.merit {
+  background: var(--merit-bg);
+  border: 1px solid var(--merit-line);
+}
+.banner.highlight {
+  background: var(--hl-bg);
+  border: 1px solid var(--hl-line);
+}
+.banner h2 {
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.018em;
+}
+.banner .tag {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  margin: 6px 0 12px;
+}
+.banner.merit .tag {
+  color: var(--merit-tag);
+}
+.banner.highlight .tag {
+  color: var(--hl-tag);
+}
+.banner p {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 48ch;
+}
+.banner .more {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1.5px solid var(--text);
+  padding-bottom: 1px;
+}
+
+.claim {
+  padding: 26px 4px 22px;
+  text-align: center;
+}
+.claim .lead {
+  font-size: clamp(20px, 3.8vw, 26px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.step {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 19px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.step:hover:not(:disabled) {
+  border-color: var(--periwinkle);
+  color: var(--text);
+}
+.step:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+.field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  border-bottom: 2px solid var(--line);
+  padding: 0 2px;
+}
+.field:focus-within {
+  border-color: var(--periwinkle);
+}
+.field .cur {
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--indigo);
+}
+.field input {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--indigo);
+  text-align: center;
+  padding: 0;
+  outline: 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  width: 4ch;
+}
+.claim .note {
+  font-size: 14.5px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+.claim .note b {
+  color: var(--text);
+}
+.claim button.go,
+.claim a.go {
+  margin-top: 18px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 34px;
+  cursor: pointer;
+  display: inline-block;
+  text-decoration: none;
+}
+.claim button.go:hover,
+.claim a.go:hover {
+  opacity: 0.87;
+}
+
+.ranges {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex-wrap: wrap;
+  padding: 16px 0 2px;
+  font-size: 14.5px;
+}
+.ranges button {
+  background: none;
+  border: 0;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 0;
+}
+.ranges button:hover {
+  color: var(--text);
+}
+.ranges button.on {
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.ranges i {
+  color: var(--line);
+  font-style: normal;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px 0 4px;
+  position: relative;
+}
+.tab {
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--chip);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 7px 15px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab.on {
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 700;
+}
+.moreWrap {
+  position: relative;
+}
+.pop {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  z-index: 20;
+  background: var(--pop);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 7px;
+  min-width: 186px;
+  box-shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.4);
+  display: none;
+}
+.pop.open {
+  display: block;
+}
+.pop button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--muted);
+  padding: 8px 11px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.pop button:hover {
+  background: var(--chip);
+  color: var(--text);
+}
+
+.hl {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  margin-bottom: 11px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.logo {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.hl .body {
+  flex: 1;
+  min-width: 0;
+}
+.hl .body p {
+  font-size: 16.5px;
+  line-height: 1.45;
+}
+.hl .meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 9px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.hl .right {
+  flex-shrink: 0;
+  text-align: right;
+}
+.hl .amt {
+  font-size: 27px;
+  font-weight: 700;
+  color: var(--indigo);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+.hl .go {
+  display: block;
+  margin-top: 7px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.hl .go:hover {
+  color: var(--text);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.row .n {
+  font-size: 14px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+.row .idea {
+  font-size: 16.5px;
+  line-height: 1.4;
+}
+.row .idea span {
+  display: block;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-top: 4px;
+}
+.row .end {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.row .sc {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--indigo);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  min-width: 3ch;
+  text-align: right;
+}
+.heart {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--faint);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px;
+}
+.heart span {
+  min-width: 3.5ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.heart svg {
+  width: 17px;
+  height: 17px;
+  transition: transform 0.2s ease;
+}
+.heart:hover svg {
+  transform: scale(1.18);
+}
+.heart.on {
+  color: var(--heart);
+}
+.heart.on svg path {
+  fill: var(--heart);
+  stroke: var(--heart);
+}
+
+.page-shell footer {
+  margin-top: 70px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+.flinks {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 14.5px;
+  margin-bottom: 8px;
+}
+.flinks a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.flinks a:hover {
+  color: var(--text);
+}
+.flinks a.lead {
+  color: var(--text);
+  font-weight: 700;
+}
+.byline {
+  font-size: 14.5px;
+  color: var(--faint);
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.byline img {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+}
+.byline a {
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+.byline a:hover {
+  color: var(--text);
+}
+.built {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.built p {
+  font-size: 11.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 11px;
+}
+.built .set {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.built a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+.built a:hover {
+  color: var(--text);
+  border-color: var(--periwinkle);
+}
+
+@media (max-width: 600px) {
+  .hero {
+    padding-top: 50px;
+  }
+  .row {
+    grid-template-columns: 22px 1fr auto;
+    gap: 11px;
+  }
+  .row .end {
+    gap: 11px;
+  }
+  .hl {
+    gap: 12px;
+    padding: 16px;
+  }
+  .hl .amt {
+    font-size: 22px;
+  }
+}
