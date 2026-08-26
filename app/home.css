@@ -507,14 +507,41 @@ header {
   font-style: normal;
 }
 
+/*
+ * Rewritten to a 3-level structure after two CSS-only attempts failed
+ * to stop the pills wrapping to a second line: .tabs > .tabScroll (the
+ * scrollable, non-wrapping row of visible pills) + .moreWrap (a fixed-
+ * size sibling — NOT nested inside .tabScroll) > the "More" button and
+ * its .pop dropdown. See components/CategoryTabs.tsx for the markup.
+ *
+ * flex-wrap:nowrap on .tabs and min-width:0 on .tabScroll are the two
+ * load-bearing rules: without min-width:0, a flex child refuses to
+ * shrink below its content's natural width, which was forcing the wrap
+ * regardless of what else got tried.
+ */
 .tabs {
   display: flex;
+  align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
   padding: 14px 0 4px;
-  position: relative;
+  flex-wrap: nowrap;
+}
+.tabScroll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tabScroll::-webkit-scrollbar {
+  display: none;
 }
 .tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
   font-family: inherit;
   font-size: 14px;
   background: var(--chip);
@@ -534,11 +561,13 @@ header {
 }
 .moreWrap {
   position: relative;
+  flex: 0 0 auto;
 }
 .pop {
   position: absolute;
   top: calc(100% + 7px);
-  left: 0;
+  right: 0;
+  left: auto;
   z-index: 20;
   background: var(--pop);
   border: 1px solid var(--line);

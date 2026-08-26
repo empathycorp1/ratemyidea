@@ -21,9 +21,9 @@ interface Props {
   onOpenPopupChange: (id: string | null) => void;
 }
 
-// Ported from homepage-prototype.html's tabs()/popup() — a fixed number
-// of pills visible, the rest (plus the active one, if it's among them)
-// tucked into a "More" dropdown.
+// Required DOM structure, exactly three levels: .tabs > .tabScroll (the
+// scrollable, non-wrapping row of visible pills) + .moreWrap (a fixed-
+// size sibling, never inside .tabScroll) > .tab "More" button + .pop.
 export default function CategoryTabs({
   id,
   active,
@@ -48,17 +48,19 @@ export default function CategoryTabs({
 
   return (
     <div className="tabs">
-      {vis.map((c) => (
-        <button
-          key={c.value}
-          className={`tab${c.value === active ? " on" : ""}`}
-          onClick={() => pick(c.value)}
-        >
-          {c.label}
-        </button>
-      ))}
+      <div className="tabScroll">
+        {vis.map((c) => (
+          <button
+            key={c.value}
+            className={`tab${c.value === active ? " on" : ""}`}
+            onClick={() => pick(c.value)}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
       {rest.length > 0 && (
-        <span className="moreWrap">
+        <div className="moreWrap">
           <button
             className="tab"
             onClick={(e) => {
@@ -69,15 +71,15 @@ export default function CategoryTabs({
             More &#9662;
           </button>
           {isOpen && (
-            <span className="pop open">
+            <div className="pop open">
               {rest.map((c) => (
                 <button key={c.value} onClick={() => pick(c.value)}>
                   {c.label}
                 </button>
               ))}
-            </span>
+            </div>
           )}
-        </span>
+        </div>
       )}
     </div>
   );
