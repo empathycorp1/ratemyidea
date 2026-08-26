@@ -11,6 +11,14 @@ import {
 import { incrementVisit } from "@/lib/increment-visit";
 import RateMyIdeaApp from "@/components/RateMyIdeaApp";
 
+// Without this, a dynamic route segment with no generateStaticParams
+// still risks its first render per id being cached and reused for
+// every later visitor — meaning a shared card could show whatever
+// rank was current the first time anyone opened it, forever, and
+// incrementVisit() below would stop actually incrementing anything
+// after that first render too. Both must run fresh on every visit.
+export const dynamic = "force-dynamic";
+
 type Props = { params: Promise<{ id: string }> };
 
 // Memoized so generateMetadata and the page body share one DB hit.

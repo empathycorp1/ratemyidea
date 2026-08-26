@@ -5,6 +5,12 @@ import { getCardData } from "@/lib/get-card-data";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+// getCardData() below computes a live rank via a raw pg query — no
+// fetch()/cookies()/headers() for Next to notice, so without this a
+// GET route handler like this one risks the same fate as app/page.tsx:
+// the first-generated image for an id getting cached and served to
+// everyone after, showing a rank that's stopped being true.
+export const dynamic = "force-dynamic";
 
 // Fonts don't depend on request data — read once at module scope.
 // See share-card-preview.html: font-family 'Carlito', Calibri, ...
