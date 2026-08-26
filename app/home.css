@@ -167,10 +167,10 @@ header {
   gap: 9px;
 }
 .mark {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--periwinkle);
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  display: block;
 }
 .brand {
   font-size: 13.5px;

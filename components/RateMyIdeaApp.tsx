@@ -205,7 +205,7 @@ export default function RateMyIdeaApp({
       <div className="wrap">
         <header>
           <div className="brandwrap">
-            <span className="mark" />
+            <img src="/icon.svg" alt="" width={22} height={22} className="mark" />
             <span className="brand">
               <b>ratemyidea</b>.fun
             </span>

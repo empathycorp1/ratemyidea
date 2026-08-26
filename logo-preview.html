@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RateMyIdea — logo</title>
+<link href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--indigo:#362C7A;--peri:#6C5CE0;--text:#111;--muted:#6E6E6E;--faint:#9A9A9A;--line:#EAEAEA}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#FAFAFA;font-family:'Carlito',Calibri,sans-serif;color:var(--text);
+    padding:44px 24px 90px;font-size:17px;line-height:1.6}
+  .page{max-width:860px;margin:0 auto}
+  h1{font-size:27px;font-weight:700;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin-top:7px;max-width:60ch}
+  h2{font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);
+    font-weight:400;margin:48px 0 16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:34px}
+  .card.dark{background:#0D0D0D;border-color:#242424}
+  .row{display:flex;align-items:center;gap:44px;flex-wrap:wrap}
+  .cap{font-size:13px;color:var(--faint);margin-top:12px}
+  .sizes{display:flex;align-items:flex-end;gap:30px;flex-wrap:wrap}
+  .sizes div{text-align:center}
+  .lockup{display:flex;align-items:center;gap:13px}
+  .word{font-size:29px;font-weight:700;letter-spacing:-.025em;line-height:1}
+  .word .fun{color:var(--faint);font-weight:400}
+  .dark .word{color:#fff}
+  .stack{text-align:center}
+  .stack .word{margin-top:14px;font-size:24px}
+  pre{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;
+    font-size:12.5px;line-height:1.55;overflow-x:auto;font-family:ui-monospace,Menlo,monospace;color:#333}
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Logo</h1>
+<p class="sub">Built from what the site already uses: the indigo, the periwinkle, and the quotation marks that sit around &ldquo;idea&rdquo; in your headline. Pure geometry, no font dependency, so it renders identically everywhere including as a favicon.</p>
+
+<h2>The mark</h2>
+<div class="card">
+  <div class="row">
+    <div>
+      <svg width="112" height="112" viewBox="0 0 100 100">
+        <rect width="100" height="100" rx="24" fill="#362C7A"/>
+        <path d="M30 28h17l-7 30H23z" fill="#fff" opacity=".95"/>
+        <path d="M56 28h17l-7 30H49z" fill="#6C5CE0"/>
+      </svg>
+      <div class="cap">Primary</div>
+    </div>
+    <div>
+      <svg width="112" height="112" viewBox="0 0 100 100">
+        <rect width="100" height="100" rx="24" fill="#fff" stroke="#EAEAEA"/>
+        <path d="M30 28h17l-7 30H23z" fill="#362C7A"/>
+        <path d="M56 28h17l-7 30H49z" fill="#6C5CE0"/>
+      </svg>
+      <div class="cap">Light</div>
+    </div>
+    <div>
+      <svg width="112" height="112" viewBox="0 0 100 100">
+        <rect width="100" height="100" rx="24" fill="#0D0D0D"/>
+        <path d="M30 28h17l-7 30H23z" fill="#fff"/>
+        <path d="M56 28h17l-7 30H49z" fill="#9C8BFF"/>
+      </svg>
+      <div class="cap">Dark</div>
+    </div>
+  </div>
+</div>
+
+<h2>At favicon sizes</h2>
+<div class="card">
+  <div class="sizes">
+    <div>
+      <svg width="64" height="64" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#362C7A"/>
+      <path d="M30 28h17l-7 30H23z" fill="#fff" opacity=".95"/><path d="M56 28h17l-7 30H49z" fill="#6C5CE0"/></svg>
+      <div class="cap">64</div>
+    </div>
+    <div>
+      <svg width="32" height="32" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#362C7A"/>
+      <path d="M30 28h17l-7 30H23z" fill="#fff" opacity=".95"/><path d="M56 28h17l-7 30H49z" fill="#6C5CE0"/></svg>
+      <div class="cap">32</div>
+    </div>
+    <div>
+      <svg width="16" height="16" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#362C7A"/>
+      <path d="M30 28h17l-7 30H23z" fill="#fff" opacity=".95"/><path d="M56 28h17l-7 30H49z" fill="#6C5CE0"/></svg>
+      <div class="cap">16</div>
+    </div>
+    <div>
+      <svg width="16" height="16" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#362C7A"/>
+      <path d="M30 28h17l-7 30H23z" fill="#fff"/><path d="M56 28h17l-7 30H49z" fill="#fff"/></svg>
+      <div class="cap">16 mono</div>
+    </div>
+  </div>
+  <p class="cap" style="margin-top:20px">At 16px the two-colour version still separates. The mono variant is the safer favicon if it looks muddy on your screen.</p>
+</div>
+
+<h2>Full lockup</h2>
+<div class="card">
+  <div class="lockup">
+    <svg width="42" height="42" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#362C7A"/>
+    <path d="M30 28h17l-7 30H23z" fill="#fff" opacity=".95"/><path d="M56 28h17l-7 30H49z" fill="#6C5CE0"/></svg>
+    <span class="word">ratemyidea<span class="fun">.fun</span></span>
+  </div>
+</div>
+
+<div class="card dark" style="margin-top:12px">
+  <div class="lockup">
+    <svg width="42" height="42" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#fff"/>
+    <path d="M30 28h17l-7 30H23z" fill="#362C7A"/><path d="M56 28h17l-7 30H49z" fill="#6C5CE0"/></svg>
+    <span class="word">ratemyidea<span class="fun">.fun</span></span>
+  </div>
+</div>
+
+<h2>Stacked</h2>
+<div class="card">
+  <div class="stack">
+    <svg width="66" height="66" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#362C7A"/>
+    <path d="M30 28h17l-7 30H23z" fill="#fff" opacity=".95"/><path d="M56 28h17l-7 30H49z" fill="#6C5CE0"/></svg>
+    <div class="word">ratemyidea<span class="fun">.fun</span></div>
+  </div>
+</div>
+
+<h2>The SVG, for the project</h2>
+<pre>&lt;!-- public/icon.svg --&gt;
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"&gt;
+  &lt;rect width="100" height="100" rx="24" fill="#362C7A"/&gt;
+  &lt;path d="M30 28h17l-7 30H23z" fill="#fff" opacity=".95"/&gt;
+  &lt;path d="M56 28h17l-7 30H49z" fill="#6C5CE0"/&gt;
+&lt;/svg&gt;</pre>
+
+</div>
+</body>
+</html>

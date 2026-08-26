@@ -12,6 +12,14 @@ export const metadata: Metadata = {
   title: "RateMyIdea",
   description:
     "Submit your business idea, get scored out of 100, and get one brutal line about it.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 // Sets data-theme on <html> before first paint, so there's no flash of
