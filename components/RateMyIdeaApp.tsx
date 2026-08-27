@@ -245,7 +245,7 @@ export default function RateMyIdeaApp({
             </b>{" "}
             earned
           </span>
-          <a className="full" href="#">
+          <a className="full" href="/stats">
             Full stats &rarr;
           </a>
         </div>
