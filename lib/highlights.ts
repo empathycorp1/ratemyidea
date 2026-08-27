@@ -37,6 +37,27 @@ function mapRow(r: {
   };
 }
 
+/**
+ * The highest *active* placement already on the board for this idea, in
+ * cents — or null if it has none. Per terms.html §05, a placement can't
+ * be topped up; buying again just creates a separate entry. This backs
+ * the "already on the board at $X, a new placement will appear as a
+ * separate entry" nudge on app/highlight/[id], so someone paying twice
+ * doesn't expect the amounts to combine.
+ */
+export async function getActiveHighlightAmountCents(
+  submissionId: number
+): Promise<number | null> {
+  const rows = await query<{ amount_cents: number }>(
+    `SELECT amount_cents FROM highlights
+     WHERE submission_id = $1 AND status = 'active'
+     ORDER BY amount_cents DESC
+     LIMIT 1`,
+    [submissionId]
+  );
+  return rows[0]?.amount_cents ?? null;
+}
+
 /** Writes the pending row *before* a Dodo checkout session is created —
  *  see app/api/highlight/checkout/route.ts. This is what metadata on
  *  the checkout session points back at. */

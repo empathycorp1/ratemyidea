@@ -43,7 +43,22 @@ const THEME_BOOTSTRAP = `
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html
+      lang="en"
+      className="h-full antialiased"
+      data-theme="light"
+      // The inline script below mutates this attribute before React
+      // ever hydrates. Without a JSX default + suppressHydrationWarning
+      // here, per node_modules/next/dist/docs's "Preventing Flash"
+      // guide: on a statically-rendered page, React's hydration reset
+      // clears any attribute on <html> it doesn't itself manage back to
+      // nothing — silently discarding the script's dark-mode value on
+      // first load. Confirmed via app/terms/refunds/contact (static
+      // pages): dark mode landed correctly on the (dynamic) homepage
+      // but was lost on these until this default + the useLayoutEffect
+      // reapply in components/SiteHeader.tsx were added together.
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       </head>

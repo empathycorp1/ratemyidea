@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCardData } from "@/lib/get-card-data";
 import { getTopHighlightAmount } from "@/lib/get-board-data";
+import { getActiveHighlightAmountCents } from "@/lib/highlights";
 import { MAX_BID, MIN_BID } from "@/lib/board-ui";
 import HighlightCheckout from "@/components/HighlightCheckout";
 
@@ -24,6 +25,9 @@ export default async function HighlightPage({ params, searchParams }: Props) {
   if (!idea) notFound();
 
   const topAmount = await getTopHighlightAmount();
+  const existingAmountCents = await getActiveHighlightAmountCents(submissionId);
+  const existingAmount =
+    existingAmountCents !== null ? Math.round(existingAmountCents / 100) : null;
 
   const { amount: rawAmount } = await searchParams;
   const parsed = Number(rawAmount);
@@ -40,6 +44,7 @@ export default async function HighlightPage({ params, searchParams }: Props) {
       total={idea.total}
       topAmount={topAmount}
       initialAmount={initialAmount}
+      existingAmount={existingAmount}
     />
   );
 }

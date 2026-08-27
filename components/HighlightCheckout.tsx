@@ -13,6 +13,10 @@ interface Props {
   total: number;
   topAmount: number;
   initialAmount: number;
+  /** The highest active placement already on the board for this idea,
+   *  in dollars — null if it has none. See terms.html §05: a second
+   *  purchase doesn't top up the first, it creates a separate entry. */
+  existingAmount: number | null;
 }
 
 export default function HighlightCheckout({
@@ -22,6 +26,7 @@ export default function HighlightCheckout({
   total,
   topAmount,
   initialAmount,
+  existingAmount,
 }: Props) {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof document === "undefined") return "light";
@@ -122,6 +127,14 @@ export default function HighlightCheckout({
             <b>${topAmount.toLocaleString()}</b>
           </p>
 
+          {existingAmount !== null && (
+            <p className="hlchk-existing">
+              This idea is already on the board at{" "}
+              <b>${existingAmount.toLocaleString()}</b>. A new placement will
+              appear as a separate entry.
+            </p>
+          )}
+
           <div className="claim hlchk-claim">
             <AmountStepper
               topAmount={topAmount}
@@ -163,7 +176,7 @@ export default function HighlightCheckout({
 
           <p className="hlchk-terms">
             Goes live immediately, stays until someone pays more. Payments are
-            final — non-refundable. <a href="#">Terms</a>
+            final — non-refundable. <a href="/terms">Terms</a>
           </p>
 
           {error && <p className="hlchk-error">{error}</p>}

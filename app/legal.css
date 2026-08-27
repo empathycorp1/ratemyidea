@@ -1,0 +1,179 @@
+/* Legal pages: /terms, /refunds, /contact.
+
+   Reuses home.css's shell verbatim — .page-shell, .aurora, .wrap,
+   header/.brandwrap/.mark/.brand/.toggle, footer/.flinks/.byline/.built
+   — via SiteHeader/SiteFooter, and its design tokens (--text, --muted,
+   --faint, --line, --panel, --indigo, --periwinkle, --bg) for every
+   color here, so light/dark mode is inherited for free instead of
+   redefined.
+
+   This replaces Coming Soon Files/page.css, which hardcoded its own
+   colors (--black, --grey, --mint, --lavender, ...) with no dark mode
+   at all — those never mattered here since page.css itself is not
+   carried over.
+
+   Everything below is scoped under .legal-view and prefixed `legal-`,
+   following the same collision-avoidance convention as result.css
+   (see PROGRESS.md's "Result view CSS is namespaced" note) — page.css's
+   original selectors were bare (`section`, `h2`, `p`, `ul`, `a`), which
+   would collide with half of home.css's own cascade if reused as-is. */
+
+.legal-view {
+  padding: 60px 0 0;
+}
+
+.legal-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  backdrop-filter: blur(8px);
+  padding: 7px 17px;
+  font-size: 12.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--indigo);
+}
+.legal-pill i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--periwinkle);
+  display: block;
+}
+
+.legal-view h1 {
+  font-weight: 700;
+  font-size: clamp(34px, 6.2vw, 52px);
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  margin-top: 26px;
+  text-align: center;
+}
+
+.legal-updated {
+  color: var(--faint);
+  font-size: 14.5px;
+  margin-top: 14px;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.legal-lede {
+  color: var(--muted);
+  font-size: 18px;
+  margin: 20px auto 0;
+  max-width: 50ch;
+  text-align: center;
+  line-height: 1.55;
+}
+
+.legal-main {
+  padding-top: 14px;
+}
+
+.legal-section {
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  padding: 30px 32px 32px;
+}
+.legal-section:first-of-type {
+  margin-top: 56px;
+}
+
+.legal-section h2 {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.legal-section h2 b {
+  color: var(--periwinkle);
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+.legal-section p {
+  margin-top: 14px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.legal-section p:first-of-type {
+  margin-top: 0;
+}
+
+.legal-section ul {
+  list-style: none;
+  margin-top: 16px;
+  display: block;
+}
+.legal-section ul li {
+  position: relative;
+  padding-left: 24px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.legal-section ul li + li {
+  margin-top: 12px;
+}
+.legal-section ul li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--periwinkle);
+}
+.legal-section ul li b {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.legal-note {
+  margin-top: 22px;
+  border-radius: 16px;
+  padding: 22px 24px;
+  background: var(--merit-bg);
+  border: 1px solid var(--merit-line);
+}
+.legal-note p {
+  margin-top: 0;
+  font-size: 16.5px;
+}
+.legal-note p + p {
+  margin-top: 12px;
+}
+
+.legal-section a,
+.legal-note a {
+  color: var(--indigo);
+  font-weight: 700;
+  text-decoration: none;
+}
+.legal-section a:hover,
+.legal-note a:hover {
+  color: var(--periwinkle);
+}
+
+@media (max-width: 620px) {
+  .legal-view {
+    padding-top: 42px;
+  }
+  .legal-section {
+    padding: 24px 22px 26px;
+    border-radius: 18px;
+    margin-top: 14px;
+  }
+  .legal-section:first-of-type {
+    margin-top: 44px;
+  }
+}

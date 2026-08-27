@@ -76,6 +76,20 @@
   margin-top: 8px;
 }
 
+.hlchk-existing {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--hl-tag);
+  background: var(--hl-bg);
+  border: 1px solid var(--hl-line);
+  border-radius: 12px;
+  padding: 10px 16px;
+  text-align: center;
+}
+.hlchk-existing b {
+  font-variant-numeric: tabular-nums;
+}
+
 .hlchk-fields {
   margin-top: 30px;
   display: flex;

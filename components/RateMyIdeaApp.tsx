@@ -381,9 +381,9 @@ export default function RateMyIdeaApp({
             </a>
           </div>
           <div className="flinks">
-            <a href="#">Terms</a>
-            <a href="#">Refunds</a>
-            <a href="#">Contact</a>
+            <a href="/terms">Terms</a>
+            <a href="/refunds">Refunds</a>
+            <a href="/contact">Contact</a>
           </div>
           <div className="byline">
             <span>
