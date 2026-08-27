@@ -77,7 +77,7 @@ export default function SubmitForm({ onScored }: Props) {
       </form>
       <p className="caveat">
         We score how an idea reads in one line, with no context. A working
-        business can score low. <a href="#">How scoring works?</a>
+        business can score low. <a href="/how-scoring-works">How scoring works?</a>
       </p>
     </div>
   );

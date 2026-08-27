@@ -164,6 +164,34 @@
   color: var(--periwinkle);
 }
 
+/* Dimension breakdown blocks — app/how-scoring-works only. Reuses
+   .legal-note's card treatment; adds just the name/points header row. */
+.legal-dim {
+  margin-top: 14px;
+}
+.legal-dim:first-child {
+  margin-top: 0;
+}
+.legal-dim-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 17px;
+}
+.legal-dim-head b {
+  color: var(--text);
+  font-weight: 700;
+}
+.legal-dim-points {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--periwinkle);
+  white-space: nowrap;
+}
+
 @media (max-width: 620px) {
   .legal-view {
     padding-top: 42px;

@@ -5,7 +5,7 @@ export default function SiteFooter() {
   return (
     <footer>
       <div className="flinks">
-        <a className="lead" href="#">
+        <a className="lead" href="/how-scoring-works">
           How scoring works?
         </a>
       </div>
