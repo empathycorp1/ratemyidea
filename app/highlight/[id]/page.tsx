@@ -29,12 +29,19 @@ export default async function HighlightPage({ params, searchParams }: Props) {
   const existingAmount =
     existingAmountCents !== null ? Math.round(existingAmountCents / 100) : null;
 
+  // null (not MIN_BID) when there's no real ?amount= — that's the
+  // signal HighlightCheckout uses to fall back to a remembered amount
+  // from the homepage claim strip (see lib/highlight-amount-memory.ts)
+  // instead of always defaulting to MIN_BID.
   const { amount: rawAmount } = await searchParams;
   const parsed = Number(rawAmount);
   const initialAmount =
-    Number.isFinite(parsed) && parsed >= MIN_BID && parsed <= MAX_BID
+    rawAmount !== undefined &&
+    Number.isFinite(parsed) &&
+    parsed >= MIN_BID &&
+    parsed <= MAX_BID
       ? Math.round(parsed)
-      : MIN_BID;
+      : null;
 
   return (
     <HighlightCheckout

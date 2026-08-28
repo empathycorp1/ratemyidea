@@ -110,6 +110,11 @@ lib/
                               terms.html §07 (https-only, no shorteners,
                               no affiliate params, no invite links, best-
                               effort no-redirect-chain check)
+  highlight-amount-memory.ts — localStorage bridge for the claim strip's
+                              Highlight button when there's no idea yet
+                              (rememberHighlightAmount /
+                              consumePendingHighlightAmount) — see
+                              "Claim strip Highlight button" below
 
 db/schema.sql               — idempotent, safe to rerun via `npm run db:migrate`
 scripts/migrate.mjs         — runs schema.sql against DATABASE_URL
@@ -324,16 +329,70 @@ stepper/clamp in `lib/board-ui.ts`, the server-side clamp when
 creation in the API route — never trust a client-supplied amount past
 that last point.
 
+**Claim strip Highlight button (the homepage one, not on a scored
+idea).** The problem it solves: the homepage claim strip lets someone
+pick an amount before they've submitted anything, so there's no idea
+id yet to send them to a real `/highlight/[id]` with. Two different
+behaviors depending on whether `RateMyIdeaApp`'s `result` state is set:
+
+- **No idea scored yet** (`result` is null): the button is a plain
+  `<button>`, not a link. Clicking it calls
+  `rememberHighlightAmount(bidAmount)` (writes to `localStorage` via
+  `lib/highlight-amount-memory.ts`) and
+  `submitFormRef.current?.focusForHighlight()` — an imperative handle
+  `SubmitForm` exposes via `useImperativeHandle`/`forwardRef` that
+  smooth-scrolls its textarea into view, focuses it, and reveals a
+  `.highlight-nudge` line ("Score your idea first, then you can
+  highlight it.").
+- **An idea is already on screen** (`result` is set, e.g. right after
+  scoring or on a shared `/idea/[id]` link): the button is a real
+  `<a href={\`/highlight/${result.id}?amount=${bidAmount}\`}>` — there's
+  a real id, so it just goes straight there like any other real
+  Highlight link.
+
+`app/highlight/[id]/page.tsx` passes `initialAmount` as `number | null`
+to `HighlightCheckout` — `null` specifically means "no real `?amount=`
+was in the URL" (not "defaulted to MIN_BID"), which is the signal
+`HighlightCheckout` uses to call `consumePendingHighlightAmount()` in a
+`useEffect` on mount (not a lazy `useState` initializer — same
+hydration-mismatch reasoning as the theme toggle: `localStorage` isn't
+available during SSR, so reading it at render time risks server/client
+output disagreeing). That function reads-and-clears the remembered
+amount in one call, so it only ever pre-fills once — a months-old
+choice can't silently resurface on some unrelated later purchase.
+
+Verified end-to-end in the browser, not just by reading the code: set
+the stepper to a non-default amount on the homepage, clicked
+Highlight, confirmed the nudge line/focus/scroll/`localStorage` all
+fired, scored a real idea, followed its real "Highlight this idea"
+link (no `?amount=` in that URL), and confirmed `/highlight/[id]`
+pre-filled the remembered amount and cleared it from `localStorage`
+afterward. Separately confirmed the already-scored-idea path renders a
+real `<a href="/highlight/N?amount=...">`, not the button.
+
 ## Half-finished / explicitly deferred (by instruction, not by accident)
 
-- **`/highlight` (query-param, no idea attached)** stays a placeholder —
-  it's the homepage claim strip's generic link and was never in scope;
-  only `/highlight/[id]` (a specific idea) was requested and built.
-- **Stats page, legal pages, "How scoring works?" page.** All footer
-  links to these are `href="#"`.
+- **`app/highlight/page.tsx` (the bare `/highlight?amount=` placeholder)
+  is now orphaned — nothing links to it any more.** It used to be the
+  homepage claim strip's Highlight target before an idea existed to
+  attach it to; that button now either nudges the visitor to the
+  submission box (no idea yet) or links straight to a real
+  `/highlight/[id]` (idea already on screen) — see "Claim strip
+  Highlight button" below. The file itself was left in place rather
+  than deleted, since removing a route is a decision worth a separate
+  ask rather than an assumed cleanup. Flagged again in Known issues.
+- **Two banner links are still real placeholders**: the Highlight Board
+  banner's "Get Featured →" and the Merit Board banner's "See the Full
+  Board →" (`components/RateMyIdeaApp.tsx`), both still `href="#"`.
+  Never specced or requested; not touched.
 - **Result view's dark theme exists** (see above) — don't reintroduce
   the "no dark mode" gap that used to be documented here; it's been
   fixed.
+- Stats page, legal pages, and "How scoring works?" are now all real,
+  built pages, linked from everywhere they should be — this line used
+  to say otherwise; it didn't get updated for a few requests after
+  they shipped. If a page is later added and this file isn't updated
+  to match, don't trust this section over what's actually in `app/`.
 
 ## Known issues / things to watch
 

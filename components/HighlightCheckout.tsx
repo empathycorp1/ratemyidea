@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "@/app/home.css";
 import "@/app/highlight.css";
 import { MAX_BID, MIN_BID } from "@/lib/board-ui";
+import { consumePendingHighlightAmount } from "@/lib/highlight-amount-memory";
 import AmountStepper from "./AmountStepper";
 
 interface Props {
@@ -12,7 +13,11 @@ interface Props {
   category: string;
   total: number;
   topAmount: number;
-  initialAmount: number;
+  /** A real ?amount= from the URL, already validated server-side —
+   *  null when there wasn't one, which is the signal to fall back to
+   *  a remembered amount from the homepage claim strip instead of
+   *  always defaulting to MIN_BID. See app/highlight/[id]/page.tsx. */
+  initialAmount: number | null;
   /** The highest active placement already on the board for this idea,
    *  in dollars — null if it has none. See terms.html §05: a second
    *  purchase doesn't top up the first, it creates a separate entry. */
@@ -34,11 +39,27 @@ export default function HighlightCheckout({
       ? "dark"
       : "light";
   });
-  const [amount, setAmount] = useState(initialAmount);
+  const [amount, setAmount] = useState(initialAmount ?? MIN_BID);
   const [url, setUrl] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // No real ?amount= was given — check for one remembered from the
+  // homepage claim strip (see lib/highlight-amount-memory.ts). Done in
+  // an effect, not a lazy useState initializer, for the same reason
+  // the theme toggle reads document.documentElement in an effect
+  // rather than at first render: localStorage isn't available during
+  // SSR, and reading it at render time would risk a hydration
+  // mismatch between server and client output.
+  useEffect(() => {
+    if (initialAmount !== null) return;
+    const remembered = consumePendingHighlightAmount();
+    if (remembered !== null) {
+      setAmount(Math.min(MAX_BID, Math.max(MIN_BID, remembered)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function flip() {
     const next = theme === "dark" ? "light" : "dark";

@@ -1,18 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import type { ResultIdea } from "./ResultView";
 
 interface Props {
   onScored: (data: ResultIdea) => void;
 }
 
+export interface SubmitFormHandle {
+  /** Called from the homepage claim strip's Highlight button when
+   *  there's no idea yet to highlight — scrolls the textarea into
+   *  view, focuses it, and surfaces the nudge line explaining why. */
+  focusForHighlight: () => void;
+}
+
 // Markup and classes from homepage-prototype.html's .hero block
 // (h1, textarea, .count, .submit, .caveat) — see app/home.css.
-export default function SubmitForm({ onScored }: Props) {
+const SubmitForm = forwardRef<SubmitFormHandle, Props>(function SubmitForm(
+  { onScored },
+  ref
+) {
   const [idea, setIdea] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showHighlightNudge, setShowHighlightNudge] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focusForHighlight() {
+      setShowHighlightNudge(true);
+      textareaRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      textareaRef.current?.focus();
+    },
+  }));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,8 +79,14 @@ export default function SubmitForm({ onScored }: Props) {
         <br />
         with an <em>&ldquo;idea&rdquo;</em>
       </h1>
+      {showHighlightNudge && (
+        <p className="highlight-nudge">
+          Score your idea first, then you can highlight it.
+        </p>
+      )}
       <form onSubmit={handleSubmit}>
         <textarea
+          ref={textareaRef}
           value={idea}
           onChange={(e) => setIdea(e.target.value)}
           maxLength={280}
@@ -81,4 +110,6 @@ export default function SubmitForm({ onScored }: Props) {
       </p>
     </div>
   );
-}
+});
+
+export default SubmitForm;

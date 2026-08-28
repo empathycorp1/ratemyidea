@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "@/app/result.css";
 import "@/app/home.css";
 import type { HighlightRow, LiveStats, MeritRow } from "@/lib/get-board-data";
 import { getDeviceId } from "@/lib/device-id";
 import { MIN_BID, ranges, slice } from "@/lib/board-ui";
+import { rememberHighlightAmount } from "@/lib/highlight-amount-memory";
 import ResultView, { type ResultIdea } from "./ResultView";
-import SubmitForm from "./SubmitForm";
+import SubmitForm, { type SubmitFormHandle } from "./SubmitForm";
 import CategoryTabs from "./CategoryTabs";
 import RangeSelector from "./RangeSelector";
 import AmountStepper from "./AmountStepper";
@@ -55,6 +56,7 @@ export default function RateMyIdeaApp({
 
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [bidAmount, setBidAmount] = useState(MIN_BID);
+  const submitFormRef = useRef<SubmitFormHandle>(null);
 
   // Sync the toggle icon with whatever the blocking bootstrap script in
   // app/layout.tsx already set on <html>, without touching it during
@@ -139,6 +141,15 @@ export default function RateMyIdeaApp({
     setResult(null);
     setAnimate(false);
     window.history.pushState(null, "", "/");
+  }
+
+  // The claim strip's Highlight button, clicked with no idea scored
+  // yet — there's no id to send anyone to a real /highlight/[id] with,
+  // so instead: remember the chosen amount for when one exists, and
+  // point them at the submission box that will get them one.
+  function handleHighlightWithNoIdea() {
+    rememberHighlightAmount(bidAmount);
+    submitFormRef.current?.focusForHighlight();
   }
 
   async function handleLike(row: MeritRow) {
@@ -227,7 +238,7 @@ export default function RateMyIdeaApp({
             onScoreAnother={handleScoreAnother}
           />
         ) : (
-          <SubmitForm onScored={handleScored} />
+          <SubmitForm ref={submitFormRef} onScored={handleScored} />
         )}
 
         <div className="live">
@@ -269,9 +280,22 @@ export default function RateMyIdeaApp({
               amount={bidAmount}
               onAmountChange={setBidAmount}
             />
-            <a className="go" href={`/highlight?amount=${bidAmount}`}>
-              Highlight
-            </a>
+            {result ? (
+              // A real idea is already on screen — go straight to its
+              // real highlight flow with the chosen amount, rather
+              // than the no-idea-yet fallback below.
+              <a className="go" href={`/highlight/${result.id}?amount=${bidAmount}`}>
+                Highlight
+              </a>
+            ) : (
+              <button
+                type="button"
+                className="go"
+                onClick={handleHighlightWithNoIdea}
+              >
+                Highlight
+              </button>
+            )}
           </div>
 
           <RangeSelector

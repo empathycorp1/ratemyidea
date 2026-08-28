@@ -216,6 +216,16 @@ header {
   color: var(--indigo);
 }
 
+/* Shown when the claim strip's Highlight button is clicked with no
+   idea scored yet — see components/SubmitForm.tsx's focusForHighlight
+   and components/RateMyIdeaApp.tsx's handleHighlightWithNoIdea. */
+.highlight-nudge {
+  margin-top: 26px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--hl-tag);
+}
+
 .hero textarea {
   width: 100%;
   margin-top: 40px;
