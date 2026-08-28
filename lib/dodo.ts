@@ -1,25 +1,24 @@
 import DodoPayments from "dodopayments";
 
-// Test mode only, deliberately. DODO_ENVIRONMENT is read (not
-// hardcoded) so the value on Vercel is the single source of truth, but
-// this throws rather than silently proceeding if it's ever anything
-// other than "test_mode" — switching this project to live_mode is a
-// decision that needs its own explicit review, not something that
-// should happen because an env var got fat-fingered.
+// DODO_ENVIRONMENT is read (not hardcoded) so the value on Vercel is
+// the single source of truth, but this still throws on anything other
+// than the two real values the SDK accepts — a fat-fingered env var
+// should fail loudly at startup, not silently misconfigure the client.
+//
+// This project ran test-mode-only for its first stretch, enforced by a
+// guard here that refused to start under "live_mode" at all. Going
+// live was a deliberate decision (2026-08-27): all four DODO_* env
+// vars were switched to live credentials on Vercel and confirmed
+// working against the live SDK before this guard was removed. If this
+// project is ever deliberately moved back to test-mode-only, reinstate
+// an explicit block on "live_mode" here rather than relying on the env
+// var alone.
 const environment = process.env.DODO_ENVIRONMENT;
 if (environment !== "test_mode" && environment !== "live_mode") {
   throw new Error(
     `DODO_ENVIRONMENT must be "test_mode" or "live_mode", got ${JSON.stringify(
       environment
     )}. Check the env var on Vercel / .env.local.`
-  );
-}
-if (environment === "live_mode") {
-  throw new Error(
-    "DODO_ENVIRONMENT is set to \"live_mode\" — refusing to start. This " +
-      "project is test-mode only for now; if going live is genuinely " +
-      "intended, this guard in lib/dodo.ts needs to be removed " +
-      "deliberately, not bypassed."
   );
 }
 

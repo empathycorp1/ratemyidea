@@ -24,9 +24,18 @@ a paid one (the Highlight Board, ranked by spend). Full concept in
 
 Built and working end-to-end: idea submission → scoring → result page
 → share card → homepage with both boards, live stats, likes, a working
-dark theme, and a real Highlight Board payment flow via Dodo Payments
-(test mode). Verified against real production traffic and Dodo's real
-test-mode API throughout, not just locally.
+dark theme, and a real Highlight Board payment flow via Dodo Payments.
+**Switched from Dodo's test mode to live mode on 2026-08-27** — all
+four `DODO_*` env vars on Vercel now hold live credentials, and the
+test-mode-only startup guard that used to live in `lib/dodo.ts` was
+deliberately removed (see that file's own comment). This site now
+takes real payments. Verified against real production traffic and,
+while it was still test-mode, Dodo's test-mode API — the live-mode
+integration itself hasn't had the same battery of synthetic
+webhook/refund/mismatch tests run against it (those all required a
+test-mode product), so treat the payment flow as "known-good in test
+mode, structurally unchanged in live mode" rather than independently
+re-verified live.
 
 **Database was wiped for launch just before this note was written.**
 All tables were emptied and every serial id sequence reset to 1, then
@@ -90,7 +99,8 @@ app/
 lib/
   dodo.ts                  — DodoPayments SDK client singleton; throws
                               at import time if DODO_ENVIRONMENT isn't
-                              exactly "test_mode" (see below)
+                              "test_mode" or "live_mode" (see below —
+                              this is live_mode now, deliberately)
   highlights.ts             — all `highlights` table access: pending
                               row creation, activateHighlight (webhook's
                               path), deactivateHighlightByPaymentId
@@ -248,16 +258,25 @@ a new row is rejected if *either* already matches for that idea, not
 just one. No accounts exist, so this is what "one like per person"
 means without them.
 
-## Highlight Board payment flow (Dodo Payments, test mode)
+## Highlight Board payment flow (Dodo Payments — now live mode)
 
-Built end-to-end and verified live against Dodo's test-mode API (real
+Built end-to-end and verified against Dodo's *test*-mode API (real
 checkout sessions created, a real signed webhook activated a placement,
 an amount-mismatch case was flagged not activated, a refund removed
 it, a forged signature was rejected — all confirmed against the actual
 `highlights` table and the actual rendered homepage board, not just
-code review). `DODO_ENVIRONMENT` must be exactly `"test_mode"` —
-`lib/dodo.ts` throws at import time otherwise, so this can't silently
-start charging real cards.
+code review). **Switched to `DODO_ENVIRONMENT=live_mode` on
+2026-08-27**, with all four `DODO_*` env vars updated to live
+credentials on Vercel — `lib/dodo.ts` used to hard-refuse to start
+under `live_mode` at all (a deliberate first-build safety guard); that
+guard was removed on request once going live was confirmed intended.
+The flow itself is unchanged — same code path, same webhook, same
+`highlights` table — only the credentials and Dodo's own environment
+differ now. The synthetic webhook tests above were never rerun against
+the live product (there's no safe way to synthesize a *real* Dodo
+payment for that), so live mode is running on the strength of the
+test-mode verification plus code being identical, not a fresh
+live-mode test pass.
 
 **Flow:** `/highlight/[id]` (real checkout form, reuses AmountStepper
 verbatim) → POST `/api/highlight/checkout` writes a `pending` row in
@@ -378,13 +397,16 @@ that last point.
   `DODO_ENVIRONMENT`, optionally `DAILY_SCORE_CAP`) are set directly on
   the Vercel project dashboard, not derived from `.env.local` at deploy
   time — `.env.local` is gitignored and only matters for local dev.
-  `DODO_ENVIRONMENT` must stay `"test_mode"` until going live is a
-  deliberate decision — see "Highlight Board payment flow" above.
-  **The Dodo webhook endpoint (`/api/dodo/webhook`) also needs to be
-  registered in the Dodo test-mode dashboard** pointing at
+  `DODO_ENVIRONMENT` is `"live_mode"` as of 2026-08-27 (all four
+  `DODO_*` vars hold live credentials) — see "Highlight Board payment
+  flow" above for how that switch happened and what wasn't re-verified
+  because of it. **The Dodo webhook endpoint (`/api/dodo/webhook`)
+  also needs to be registered in the matching (now live-mode) Dodo
+  dashboard** pointing at
   `https://ratemyidea-flax.vercel.app/api/dodo/webhook` — that
   registration lives on Dodo's side, not in this repo, so it doesn't
-  travel with a redeploy or a fresh clone.
+  travel with a redeploy or a fresh clone, and a test-mode-dashboard
+  registration from before the switch does nothing for live traffic.
 - **Local dev:** `npm run dev` (or the `ratemyidea-dev` launch config).
   Note Next's docs say pages are *always* dynamically rendered in dev
   regardless of `force-dynamic` — the PRERENDER bug above was
