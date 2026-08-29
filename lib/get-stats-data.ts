@@ -1,5 +1,6 @@
 import { query } from "./db";
 import { CATEGORY_VALUES, CATEGORY_LABELS } from "./categories";
+import { getVisitorStats, type VisitorStats } from "./visitors";
 
 // Dodo's own per-transaction fee, applied to figure out net revenue —
 // see terms.html §06 / the checkout flow: Dodo is merchant of record,
@@ -22,6 +23,7 @@ export interface CategoryCount {
 
 export interface StatsData {
   hereNow: number;
+  visitors: VisitorStats;
   scoredToday: number;
   scoredTotal: number;
   highestScoreToday: number | null;
@@ -40,7 +42,7 @@ export interface StatsData {
  *  which is force-dynamic specifically so every one of these numbers
  *  is a fresh query on every load, never a cached/stale snapshot. */
 export async function getStatsData(): Promise<StatsData> {
-  const [activity, revenueRow, highlightRow, distributionRows, categoryRows] =
+  const [activity, visitors, revenueRow, highlightRow, distributionRows, categoryRows] =
     await Promise.all([
       query<{
         here_now: string;
@@ -56,6 +58,7 @@ export async function getStatsData(): Promise<StatsData> {
            (SELECT max(total) FROM submissions WHERE created_at >= date_trunc('day', now())) AS highest_today,
            (SELECT max(total) FROM submissions) AS highest_ever`
       ),
+      getVisitorStats(),
       // Per-row fee math, then summed — NOT (sum * 0.96 - 0.40), which
       // would only be correct for a single transaction. Only 'active'
       // placements count, matching every other revenue figure on the
@@ -126,6 +129,7 @@ export async function getStatsData(): Promise<StatsData> {
 
   return {
     hereNow: Number(a?.here_now ?? 0),
+    visitors,
     scoredToday: Number(a?.scored_today ?? 0),
     scoredTotal: Number(a?.scored_total ?? 0),
     highestScoreToday: a?.highest_today ?? null,

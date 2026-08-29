@@ -64,6 +64,10 @@ lib/
   get-card-data.ts         — one idea + live rank, used by card image AND idea page
   board-ui.ts               — pure UI logic: stepSize/ranges/slice, MIN_BID/MAX_BID
   likes.ts, presence.ts, device-id.ts, increment-visit.ts, types.ts
+  visitors.ts               — recordVisit/getVisitorStats, backing the
+                              /stats visitor counter — see below, this
+                              is deliberately NOT the same table/concern
+                              as presence.ts
 
 components/
   RateMyIdeaApp.tsx        — top-level client component: whole page shell,
@@ -79,6 +83,10 @@ components/
                               exact same like-toggle logic as
                               RateMyIdeaApp's Merit Board widget — not a
                               separate design, the same board unsliced
+  VisitTracker.tsx           — mounted once in app/layout.tsx, renders
+                              nothing, fires one POST /api/visit per
+                              real page load. See "Visitor counter"
+                              below.
 
 **The header logo (mark + wordmark) is a real link home, everywhere
 (fixed 2026-08-29).** It used to be an inert `<div className="brandwrap">`
@@ -113,7 +121,8 @@ app/
   idea/[id]/page.tsx        — result page + OG metadata (force-dynamic)
   api/card/[id]/route.tsx   — share card PNG via next/og (force-dynamic)
   api/score/route.ts        — POST, scores an idea
-  api/like/route.ts, api/presence/route.ts — POST, both fire-and-forget
+  api/like/route.ts, api/presence/route.ts, api/visit/route.ts — POST,
+                              all three fire-and-forget
   highlight/page.tsx        — the old query-param placeholder. ORPHANED
                               now — nothing links to it since the claim
                               strip button was rewired (see "Claim strip
@@ -450,6 +459,63 @@ link (no `?amount=` in that URL), and confirmed `/highlight/[id]`
 pre-filled the remembered amount and cleared it from `localStorage`
 afterward. Separately confirmed the already-scored-idea path renders a
 real `<a href="/highlight/N?amount=...">`, not the button.
+
+## Visitor counter (`/stats`, added 2026-08-29)
+
+A new `visitors` table (`visitor_key TEXT PRIMARY KEY, first_seen
+TIMESTAMPTZ NOT NULL DEFAULT now()`), **deliberately separate from
+`presence`**, for two reasons worked through before building this
+(the user asked for this reasoning explicitly, up front):
+
+1. `presence.last_seen` is overwritten on every heartbeat ping — that
+   IS its job (the "N here now" figure, filtered to the last 60
+   seconds). There's no immutable "first seen" in there, and bolting
+   one on would mean a table whose whole purpose is ephemeral/recency
+   also becomes the permanent historical record a visitor count needs.
+   `presence` has already been wiped once (the pre-launch reset) — a
+   visitor counter must never be that disposable.
+2. The presence heartbeat only ever fires from `RateMyIdeaApp.tsx` —
+   i.e. only the homepage and `/idea/[id]`. A real site-wide visitor
+   count needs every page, including `/terms`, `/stats`, `/board`,
+   `/highlight/[id]` — pages that never ping presence at all.
+
+**How it's counted**, per `components/VisitTracker.tsx` (mounted once
+in `app/layout.tsx`, renders nothing): one `POST /api/visit` per real
+page load, not per page — the root layout doesn't remount on soft
+client-side navigations (though in practice almost every internal link
+in this app is a plain `<a>` anyway, so nearly all navigation here is
+already a hard reload — the "once per mount" property matters more if
+that ever changes). `lib/visitors.ts`'s `recordVisit()` is
+`INSERT ... ON CONFLICT DO NOTHING`, so firing more than once per
+visitor over time is harmless — verified directly: reloaded the
+homepage and visited `/terms` from the same browser, row count stayed
+at 1.
+
+**The key**: `device:<id>` for a normal persisted `getDeviceId()`
+value (the same one `likes`/`presence` already use), or `ip:<address>`
+when the client's id is the ephemeral, non-persisted fallback
+`getDeviceId()` returns when `localStorage` throws (a fresh value
+every call — trusting it as a stable id would overcount one blocked-
+storage visitor as many). `lib/device-id.ts` exports
+`isEphemeralDeviceId()` — anything matching that (or a missing
+`deviceId` entirely) falls back to IP in `app/api/visit/route.ts`.
+Verified directly: POSTed a fake `session-...` id and confirmed it
+landed as an `ip:` row, not a `device:` one.
+
+**Day count**: `Math.max(1, Math.floor(elapsedMs / 86400000))` off
+`MIN(first_seen)` — whole days actually elapsed, floored, never below
+1, so day one reads "1 day" and it only ticks over to "2 days" once a
+full 24h has genuinely passed (not the moment the calendar date
+changes). `null` (tile note omitted entirely) when the table is empty,
+rather than showing "in 0 days".
+
+**No backfill, by construction, not by a special case**: the table
+started genuinely empty at deploy time, so the count and day-clock
+both start from real rows only — there was nothing to backfill or
+estimate, the empty table already guarantees that. Test rows created
+while verifying this locally (same shared DB as production) were
+deleted before deploying, specifically so production's real count
+starts from real traffic, not from this session's own testing.
 
 ## Half-finished / explicitly deferred (by instruction, not by accident)
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import VisitTracker from "@/components/VisitTracker";
 
 // Lets per-page metadata (like the share card's og:image) use relative
 // URLs and have Next.js resolve them to absolute ones automatically.
@@ -62,7 +63,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       </head>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <VisitTracker />
+        {children}
+      </body>
     </html>
   );
 }

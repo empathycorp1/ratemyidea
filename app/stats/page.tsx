@@ -104,6 +104,20 @@ export default async function StatsPage() {
             </div>
           </div>
           <div className="stats-tile">
+            <div className="stats-tile-label">Visitors</div>
+            <div
+              className={`stats-tile-value${stats.visitors.count === 0 ? " empty" : ""}`}
+            >
+              {stats.visitors.count.toLocaleString("en-US")}
+            </div>
+            {stats.visitors.daysElapsed !== null && (
+              <div className="stats-tile-note">
+                in {stats.visitors.daysElapsed}{" "}
+                {stats.visitors.daysElapsed === 1 ? "day" : "days"}
+              </div>
+            )}
+          </div>
+          <div className="stats-tile">
             <div className="stats-tile-label">Highest score today</div>
             <div
               className={`stats-tile-value${stats.highestScoreToday === null ? " empty" : ""}`}

@@ -22,3 +22,12 @@ export function getDeviceId(): string {
     return `session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 }
+
+/** True for the non-persisted fallback getDeviceId() returns when
+ *  localStorage threw — a fresh value every call, not a stable
+ *  identity. Server-side consumers that need real dedupe across visits
+ *  (see lib/visitors.ts) should treat this the same as "no device id
+ *  at all" and fall back to IP instead of trusting it. */
+export function isEphemeralDeviceId(id: string): boolean {
+  return id.startsWith("session-");
+}

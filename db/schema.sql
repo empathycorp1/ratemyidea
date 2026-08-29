@@ -141,3 +141,20 @@ CREATE TABLE IF NOT EXISTS presence (
   device_id TEXT PRIMARY KEY,
   last_seen TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- visitors: one permanent row per unique visitor, first-seen only —
+-- deliberately separate from `presence` (which is ephemeral/recency-
+-- based and gets overwritten every heartbeat; conflating the two would
+-- risk losing visitor history if presence is ever pruned or reset, as
+-- it already has been once). visitor_key is "device:<id>" for a
+-- normal persisted localStorage id, or "ip:<address>" for anyone
+-- blocking storage (see lib/device-id.ts's isEphemeralDeviceId and
+-- lib/visitors.ts). Written via INSERT ... ON CONFLICT DO NOTHING —
+-- first_seen is set once, on the real first visit, and never touched
+-- again. Backs the /stats "N visitors in M days" figure. Counting
+-- starts empty from whenever this table was first deployed, not
+-- backfilled or estimated from any earlier launch date.
+CREATE TABLE IF NOT EXISTS visitors (
+  visitor_key TEXT PRIMARY KEY,
+  first_seen TIMESTAMPTZ NOT NULL DEFAULT now()
+);
