@@ -215,12 +215,19 @@ export default function RateMyIdeaApp({
 
       <div className="wrap">
         <header>
-          <div className="brandwrap">
+          {/* A plain <a>, not next/link — this needs to be a real
+              navigation, including when result is currently showing
+              (its URL got there via a manual history.pushState, not a
+              real route change, so Next's router doesn't necessarily
+              see this as leaving "/"; a soft transition could no-op
+              instead of actually resetting the page). See the matching
+              comment in components/SiteHeader.tsx. */}
+          <a className="brandwrap" href="/">
             <img src="/icon.svg" alt="" width={22} height={22} className="mark" />
             <span className="brand">
               <b>ratemyidea</b>.fun
             </span>
-          </div>
+          </a>
           <button
             className="toggle"
             onClick={flip}

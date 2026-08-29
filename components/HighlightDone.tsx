@@ -120,12 +120,12 @@ export default function HighlightDone({ submissionId, highlightId }: Props) {
 
       <div className="wrap">
         <header>
-          <div className="brandwrap">
+          <a className="brandwrap" href="/">
             <img src="/icon.svg" alt="" width={22} height={22} className="mark" />
             <span className="brand">
               <b>ratemyidea</b>.fun
             </span>
-          </div>
+          </a>
           <button className="toggle" onClick={flip} aria-label="Toggle theme">
             {theme === "dark" ? "☀" : "☾"}
           </button>

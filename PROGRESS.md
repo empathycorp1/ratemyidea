@@ -80,6 +80,34 @@ components/
                               RateMyIdeaApp's Merit Board widget — not a
                               separate design, the same board unsliced
 
+**The header logo (mark + wordmark) is a real link home, everywhere
+(fixed 2026-08-29).** It used to be an inert `<div className="brandwrap">`
+— on every page except the homepage there was no way back to it at
+all. `.brandwrap` is now a plain `<a href="/">` (not `next/link`) in
+all **four** places this header markup exists:
+`components/SiteHeader.tsx`, `components/RateMyIdeaApp.tsx`,
+`components/HighlightCheckout.tsx`, and `components/HighlightDone.tsx`
+— the last two were a separate, previously-undocumented duplication of
+the exact same bug, found by grepping for `brandwrap` rather than
+trusting the "two places" the request named. Plain `<a>`, deliberately,
+not `next/link`: on the homepage, a scored result gets its URL via a
+manual `window.history.pushState` to `/idea/N` (see
+`RateMyIdeaApp.tsx`'s `handleScored`), not a real Next.js route change
+— Next's router doesn't necessarily know it's left `/`, so a soft
+`<Link>` click there could no-op instead of actually resetting the
+page. A real navigation sidesteps that ambiguity everywhere, at the
+cost of a full reload instead of a soft transition (matches "reloads
+home" in the request). Verified this exact edge case directly: pushed
+a fake `/idea/999` URL via `history.pushState` on the homepage, then
+confirmed clicking the logo still lands on a fresh `/`.
+Appearance is unchanged (`.brandwrap` already set its own colors on
+`.brand`/`.brand b`; the fix just adds `text-decoration: none` and a
+`:hover{opacity:.87}`, matching the hover convention used on
+`.submit`/`.hlchk-submit` elsewhere) — confirmed via computed styles,
+not just visual inspection.
+`components/SiteFooter.tsx` has no "Home" link of its own; the header
+fix is what closes this gap on every page that renders it.
+
 app/
   page.tsx                 — homepage (force-dynamic)
   idea/[id]/page.tsx        — result page + OG metadata (force-dynamic)
@@ -90,7 +118,16 @@ app/
                               now — nothing links to it since the claim
                               strip button was rewired (see "Claim strip
                               Highlight button"). Left in place, not
-                              deleted; that's a separate ask.
+                              deleted; that's a separate ask. Genuinely
+                              a dead end if anyone still lands here (old
+                              bookmark, a search engine that indexed it
+                              early) — no header, no footer, no link
+                              anywhere on the page. Flagged during the
+                              2026-08-29 header-link dead-end audit;
+                              not fixed, since fixing a page that's
+                              already scheduled for removal felt like
+                              wasted effort — worth remembering if it's
+                              ever NOT deleted after all.
   highlight/[id]/page.tsx   — REAL: Dodo checkout form for one idea
                               (force-dynamic)
   highlight/[id]/done/page.tsx — REAL: post-checkout confirmation/poll

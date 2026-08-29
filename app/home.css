@@ -165,6 +165,11 @@ header {
   display: flex;
   align-items: center;
   gap: 9px;
+  text-decoration: none;
+  color: inherit;
+}
+.brandwrap:hover {
+  opacity: 0.87;
 }
 .mark {
   width: 22px;

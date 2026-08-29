@@ -59,12 +59,19 @@ export default function SiteHeader() {
 
   return (
     <header>
-      <div className="brandwrap">
+      {/* A plain <a>, not next/link — this needs to be a real
+          navigation everywhere it appears, including on the homepage
+          itself, where a soft client-side transition to a route
+          Next's router doesn't realize it's already left (the result
+          view gets there via a manual history.pushState, not a real
+          route change — see RateMyIdeaApp.tsx) could no-op instead of
+          actually resetting the page. */}
+      <a className="brandwrap" href="/">
         <img src="/icon.svg" alt="" width={22} height={22} className="mark" />
         <span className="brand">
           <b>ratemyidea</b>.fun
         </span>
-      </div>
+      </a>
       <button className="toggle" onClick={flip} aria-label="Toggle theme">
         {theme === "dark" ? "☀" : "☾"}
       </button>
