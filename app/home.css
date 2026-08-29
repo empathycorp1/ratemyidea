@@ -254,6 +254,26 @@ header {
   outline-offset: 1px;
   border-color: transparent;
 }
+/* Shown in place of the textarea/submit/caveat while lib/scoring-status.ts's
+   SCORING_PAUSED is true — same bordered-panel card look as the
+   textarea it replaces (background/border/radius/blur all match)
+   rather than a new visual language for what's meant to be temporary. */
+.hero .paused-notice {
+  margin-top: 40px;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 26px 24px;
+}
+.hero .paused-notice p {
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 52ch;
+  margin: 0 auto;
+}
+
 .hero .count {
   text-align: right;
   font-size: 13.5px;

@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import { SCORING_PAUSED, SCORING_PAUSED_MESSAGE } from "@/lib/scoring-status";
 import type { ResultIdea } from "./ResultView";
 
 interface Props {
@@ -79,35 +80,44 @@ const SubmitForm = forwardRef<SubmitFormHandle, Props>(function SubmitForm(
         <br />
         with an <em>&ldquo;idea&rdquo;</em>
       </h1>
-      {showHighlightNudge && (
-        <p className="highlight-nudge">
-          Score your idea first, then you can highlight it.
-        </p>
-      )}
-      <form onSubmit={handleSubmit}>
-        <textarea
-          ref={textareaRef}
-          value={idea}
-          onChange={(e) => setIdea(e.target.value)}
-          maxLength={280}
-          placeholder="Describe your business idea. Be honest and detailed."
-        />
-        <div className="count">
-          <span>{idea.length}</span>/280
+      {SCORING_PAUSED ? (
+        <div className="paused-notice">
+          <p>{SCORING_PAUSED_MESSAGE}</p>
         </div>
-        {error && <p className="result-error">{error}</p>}
-        <button
-          type="submit"
-          className="submit"
-          disabled={!idea.trim() || submitting}
-        >
-          {submitting ? "Scoring…" : "Rate My Idea"}
-        </button>
-      </form>
-      <p className="caveat">
-        We score how an idea reads in one line, with no context. A working
-        business can score low. <a href="/how-scoring-works">How scoring works?</a>
-      </p>
+      ) : (
+        <>
+          {showHighlightNudge && (
+            <p className="highlight-nudge">
+              Score your idea first, then you can highlight it.
+            </p>
+          )}
+          <form onSubmit={handleSubmit}>
+            <textarea
+              ref={textareaRef}
+              value={idea}
+              onChange={(e) => setIdea(e.target.value)}
+              maxLength={280}
+              placeholder="Describe your business idea. Be honest and detailed."
+            />
+            <div className="count">
+              <span>{idea.length}</span>/280
+            </div>
+            {error && <p className="result-error">{error}</p>}
+            <button
+              type="submit"
+              className="submit"
+              disabled={!idea.trim() || submitting}
+            >
+              {submitting ? "Scoring…" : "Rate My Idea"}
+            </button>
+          </form>
+          <p className="caveat">
+            We score how an idea reads in one line, with no context. A
+            working business can score low.{" "}
+            <a href="/how-scoring-works">How scoring works?</a>
+          </p>
+        </>
+      )}
     </div>
   );
 });

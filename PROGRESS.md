@@ -23,6 +23,19 @@ existing Highlight Board sections below for what's still fully live.
 
 ## Current state
 
+**Scoring is paused site-wide right now (2026-08-29) — `lib/scoring-status.ts`'s
+`SCORING_PAUSED = true`.** The Anthropic account ran out of API credit
+mid-testing the deep-dive report generator (see "Deep-dive report"
+below) — real visitors were hitting a 500 trying to score an idea, so
+submission was switched off rather than left broken. This is a single
+boolean, checked in exactly two places (`components/SubmitForm.tsx`,
+`app/api/score/route.ts`) — full detail in "Idea submission paused"
+below. **Flip `SCORING_PAUSED` back to `false` once
+console.anthropic.com shows credit again — nothing else needs to
+change.** Everything else (both boards, idea pages, share cards,
+stats, legal pages, likes, presence, the visitor counter) is
+unaffected and was verified working while this is on.
+
 **Live at:** https://ratemyidea-flax.vercel.app
 **Vercel project:** vercel.com/rate-my-idea/ratemyidea
 **Repo:** github.com/empathycorp1/ratemyidea (private) — pushing to
@@ -74,6 +87,10 @@ lib/
                               /stats visitor counter — see below, this
                               is deliberately NOT the same table/concern
                               as presence.ts
+  scoring-status.ts          — SCORING_PAUSED (currently true) +
+                              SCORING_PAUSED_MESSAGE, the site-wide
+                              kill switch for idea submission. See
+                              "Idea submission paused" below.
   report-prompt.ts           — REPORT_SYSTEM_PROMPT for the new deep-dive
                               report — imports SCORING_SYSTEM_PROMPT
                               directly (not copy-pasted) so the report's
@@ -541,6 +558,47 @@ estimate, the empty table already guarantees that. Test rows created
 while verifying this locally (same shared DB as production) were
 deleted before deploying, specifically so production's real count
 starts from real traffic, not from this session's own testing.
+
+## Idea submission paused (2026-08-29)
+
+The Anthropic account ran out of API credit (same account, same root
+cause as the deep-dive report generator's blocked validation below —
+one balance, spent across both). Real visitors were getting a raw 500
+trying to score an idea, so submission was switched off deliberately
+rather than left broken, per explicit instruction. **One boolean is
+the entire kill switch**: `lib/scoring-status.ts`'s `SCORING_PAUSED`
+(currently `true`) plus a shared `SCORING_PAUSED_MESSAGE` string so
+the two surfaces below can't drift apart. Flip it to `false` once
+credit is back — nothing else needs to change, nothing else reads it.
+
+**Two places check it, nothing else does:**
+
+1. **`components/SubmitForm.tsx`** — the `<h1>` heading ("It all
+   starts with an 'idea'") always renders unconditionally, per
+   instruction to keep it. Everything below it (the highlight nudge,
+   the textarea/count/submit form, the caveat line) is swapped for a
+   `.paused-notice` div showing the message, styled in `app/home.css`
+   to match the textarea's own card look it replaces — same
+   `var(--panel)` background, `var(--line)` border, 16px radius, blur
+   — rather than inventing a new visual language for something meant
+   to be temporary. `RateMyIdeaApp.tsx` itself is untouched — it still
+   renders `<SubmitForm ref={submitFormRef} onScored={handleScored} />`
+   exactly as before; the branch lives inside `SubmitForm`.
+2. **`app/api/score/route.ts`** — checks `SCORING_PAUSED` first, before
+   parsing the request body or touching the DB, and returns
+   `{ error: SCORING_PAUSED_MESSAGE, paused: true }` at **503**, not a
+   500 from a real Anthropic call that's guaranteed to fail right now.
+   `/test` (known issue 1 below) posts to this same route, so it's
+   covered by this one guard too — not special-cased separately.
+
+**Verified, not just written**: full `npm run build` clean, `/api/score`
+hit directly returns 503 with the clear message (confirmed via curl,
+not just reading the code), and `/board`, `/idea/1`, `/stats`,
+`/terms`, and `/api/card/1` all still return 200 — the boards, idea
+pages, share cards, stats, and legal pages are untouched by this flag.
+Checked the homepage in both light and dark mode in the browser — the
+heading stays, the notice reads clearly in both themes, boards render
+below it as normal.
 
 ## Deep-dive report (replacing the Highlight Board — generation engine only, 2026-08-29)
 
