@@ -11,9 +11,15 @@ original product specs and are still accurate references.
 
 A site where anyone submits a one-line business idea, an LLM scores it
 0–100 with a rubric and a savage one-line verdict, and it lands on a
-public leaderboard (the Merit Board, ranked by score) or — eventually —
-a paid one (the Highlight Board, ranked by spend). Full concept in
-`ratemyidea-build-manual.md`.
+public leaderboard (the Merit Board, ranked by score). Full original
+concept in `ratemyidea-build-manual.md` — that concept included a paid
+Highlight Board (ranked by spend); **that's being replaced, as of
+2026-08-29, by a paid PDF deep-dive report on a scored idea (₹995 /
+$9.99)**. Nothing about the Highlight Board has been removed yet — the
+new product is being built first, deliberately, before any dismantling
+starts (explicit instruction). See "Deep-dive report" below for what
+exists of the new product so far (generation engine only) and the
+existing Highlight Board sections below for what's still fully live.
 
 ## Current state
 
@@ -68,6 +74,17 @@ lib/
                               /stats visitor counter — see below, this
                               is deliberately NOT the same table/concern
                               as presence.ts
+  report-prompt.ts           — REPORT_SYSTEM_PROMPT for the new deep-dive
+                              report — imports SCORING_SYSTEM_PROMPT
+                              directly (not copy-pasted) so the report's
+                              per-dimension reasoning can never silently
+                              drift from the rubric that actually
+                              produced the score. See "Deep-dive report"
+                              below.
+  generate-report.ts         — generateReport(submissionId): the whole
+                              generation engine — Sonnet + web search,
+                              JSON-only output, malformed-JSON retry.
+                              Generation only, no persistence yet.
 
 components/
   RateMyIdeaApp.tsx        — top-level client component: whole page shell,
@@ -123,6 +140,14 @@ app/
   api/score/route.ts        — POST, scores an idea
   api/like/route.ts, api/presence/route.ts, api/visit/route.ts — POST,
                               all three fire-and-forget
+  api/report/preview/[id]/route.ts — GET, dev-only (404s whenever
+                              NODE_ENV !== "development", so this never
+                              responds on any real Vercel deployment).
+                              Raw-JSON output of generateReport() for
+                              manual inspection — see "Deep-dive report"
+                              below. No auth beyond the dev gate; same
+                              real-money-per-call shape as /test, just
+                              additionally environment-locked.
   highlight/page.tsx        — the old query-param placeholder. ORPHANED
                               now — nothing links to it since the claim
                               strip button was rewired (see "Claim strip
@@ -517,6 +542,103 @@ while verifying this locally (same shared DB as production) were
 deleted before deploying, specifically so production's real count
 starts from real traffic, not from this session's own testing.
 
+## Deep-dive report (replacing the Highlight Board — generation engine only, 2026-08-29)
+
+The new paid product: a three-page, ~1,500-word PDF deep-dive on one
+already-scored idea (₹995 / $9.99), replacing the Highlight Board.
+**Only the generation engine exists so far** — `lib/generate-report.ts`'s
+`generateReport(submissionId)` — plus a dev-only raw-JSON preview route.
+No PDF rendering, no payment, no UI, no `reports` DB table (nothing is
+persisted; every preview call is a fresh, billed generation). The
+Highlight Board itself is completely untouched — explicit instruction
+was to build the new product before touching the old one.
+
+**Model: Sonnet, not Haiku** (`claude-sonnet-5`, not a dated snapshot —
+dated ids like `claude-sonnet-4-6-20251114` are stale training-data
+priors, not real ids). Explicit instruction: paid deliverable, quality
+over cost. `output_config: {effort: "medium"}` — see the timing note
+below for why this isn't "high". Web search tool
+(`web_search_20260318` — the SDK's newest dated variant, not the
+`20260209` a cached reference table suggested; "prefer the latest type
+variant your model supports").
+
+**The report ARGUES a score that already exists — it doesn't re-score.**
+`REPORT_SYSTEM_PROMPT` (`lib/report-prompt.ts`) imports
+`SCORING_SYSTEM_PROMPT` directly and embeds it verbatim, specifically
+so the per-dimension reasoning on page 1 stays consistent with the
+rubric that actually produced the score sitting in `submissions` — a
+second, hand-copied rubric text would drift the moment either prompt
+changes. The model receives the idea, category, total, verdict, and
+full five-dimension breakdown as already-fixed facts and is told not
+to recompute them.
+
+**Timing: measured 3-5 minutes per report initially, not the 30-60s
+target — root-caused and improved, not silently accepted.** Two real
+issues, not one:
+
+1. **Malformed JSON on some runs, causing a full expensive retry**
+   (doubling wall-clock time on top of everything else). Root cause:
+   with web search in the mix, Claude doesn't reliably confine itself
+   to "the whole response is one JSON object" — it may write a
+   preamble text block, and/or trailing commentary in a separate block
+   after the JSON, despite explicit instructions not to. The original
+   code took `response.content.find(b => b.type === "text")` — the
+   *first* text block — which during testing was sometimes a preamble,
+   not the JSON. Fixed in two layers: `runReportGeneration()` now
+   concatenates *every* text block instead of trusting one position,
+   and a new `extractJsonObject()` takes the substring from the first
+   `{` to the last `}` rather than requiring the whole string to
+   parse — tolerates stray prose on either side, wherever it lands.
+2. **8 sequential real web searches at `effort: "high"` is just
+   slow** — each search is a real network round trip, and adaptive
+   thinking at "high" adds real time on top. `MAX_SEARCH_USES` dropped
+   8 -> 5 and effort dropped `"high"` -> `"medium"` (the documented
+   cost/time step-down "where quality holds" for non-agentic work) —
+   measured single-pass runs after both fixes: 2.6min and 1.6min. Still
+   over the 30-60s target, but roughly half the original time, and the
+   output quality at "medium" was not visibly worse in this test batch.
+   **If 30-60s is a hard requirement, not just a target, the next lever
+   is cutting `MAX_SEARCH_USES` further (2-3) or capping search result
+   count per call** — not attempted here since it starts trading away
+   real verification, which was the explicit point of enabling search
+   at all. Left as a decision for whoever picks this up next.
+
+**A real accuracy-rule violation, found in 1 of 3 test runs, not fixed
+yet — flagged prominently, this is the most important finding from
+this test batch.** For the mid-score idea (id 17), the model's own
+`web_search_tool_result` blocks contained genuine, directly relevant
+hits — `Intelligems` (pricing testing) and `Triple Whale` (ecommerce
+analytics), both real, specific competitors verified by the code's own
+independent extraction of `sources` (proof search worked: 40 real
+result URLs across 5 real queries). But the model's own JSON output
+left `page2.existingPlayers` **empty** and claimed in
+`noPlayersFoundNote`: *"Live web search was unavailable during this
+session's research pass"* — false; search demonstrably ran and found
+exactly the kind of result the report needed. It then named Shopify,
+Klaviyo, and Stripe **from memory, in prose**, which
+`REPORT_SYSTEM_PROMPT` explicitly forbids ("never name one from
+memory"). The other two test runs (low score id 34, high score id 35)
+correctly cited real, sourced competitors with no such issue — so this
+looks like an intermittent model-following gap, not a broken
+integration (the tool-use plumbing is confirmed working via the
+independently-extracted `sources`), most likely because the prompt
+never shows a *worked example* of citing one of the URLs already in
+hand as `sourceUrl` — it only describes the rule abstractly. Recorded
+here rather than silently patched: worth a prompt revision (a concrete
+example) and a rerun across more ideas before this is trusted for a
+paid product, not something to wave off as one-off noise.
+
+**Verified before showing output**: three real reports generated end
+to end — a real low-scoring idea (id 34, score 12), a real mid-scoring
+one (id 17, score 38), and one temporary high-scoring test row
+(inserted directly by SQL, not through the real scorer — text reused
+from `scoring-spec.md`'s own "payments infrastructure for an
+underserved country" calibration anchor, since nothing genuinely
+high-scoring exists in the live data yet) to get real coverage of the
+70s range as asked. The temporary row was deleted immediately after
+its report generated — it was never a real submission and never
+visible on any board.
+
 ## Half-finished / explicitly deferred (by instruction, not by accident)
 
 - **`app/highlight/page.tsx` (the bare `/highlight?amount=` placeholder)
@@ -590,6 +712,16 @@ starts from real traffic, not from this session's own testing.
    happened only when the Vercel CLI's device login broke. Everything
    before that point has no per-change history, just the state of the
    world at that moment.
+8. **The deep-dive report generator (`lib/generate-report.ts`)
+   sometimes claims web search "was unavailable" and names companies
+   from memory instead, when search demonstrably worked** — seen in 1
+   of 3 test runs, not yet fixed. Full writeup, evidence, and a likely
+   cause in "Deep-dive report" above. Don't trust `page2.existingPlayers`
+   /`noPlayersFoundNote` at face value yet across a larger sample.
+9. **The same generator runs 1.5-3 minutes per report**, not the
+   30-60s originally targeted — improved from an initial 3-5 minutes
+   (see "Deep-dive report" above for the two fixes and what's left to
+   try if 30-60s turns out to be a hard requirement).
 
 ## Environment / deployment
 
