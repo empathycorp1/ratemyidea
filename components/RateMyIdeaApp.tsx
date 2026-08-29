@@ -349,7 +349,7 @@ export default function RateMyIdeaApp({
               Every idea lands here, ordered by what it scored. Money cannot
               move it up, unless highlighted.
             </p>
-            <a className="more" href="#">
+            <a className="more" href="/board">
               See the Full Board &rarr;
             </a>
           </div>

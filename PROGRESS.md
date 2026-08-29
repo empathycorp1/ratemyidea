@@ -70,6 +70,15 @@ components/
                               theme toggle, form/result toggle, both boards
   SubmitForm.tsx, ResultView.tsx, CategoryTabs.tsx, RangeSelector.tsx,
   AmountStepper.tsx
+  SiteHeader.tsx, SiteFooter.tsx, LegalLayout.tsx — shared shell for
+                              every non-homepage page (/terms, /refunds,
+                              /contact, /how-scoring-works, /stats,
+                              /board) — see "CSS namespacing" below
+  FullBoardView.tsx         — the full Merit Board (app/board/page.tsx),
+                              reusing CategoryTabs/RangeSelector and the
+                              exact same like-toggle logic as
+                              RateMyIdeaApp's Merit Board widget — not a
+                              separate design, the same board unsliced
 
 app/
   page.tsx                 — homepage (force-dynamic)
@@ -77,10 +86,11 @@ app/
   api/card/[id]/route.tsx   — share card PNG via next/og (force-dynamic)
   api/score/route.ts        — POST, scores an idea
   api/like/route.ts, api/presence/route.ts — POST, both fire-and-forget
-  highlight/page.tsx        — still a PLACEHOLDER (query-param, no idea
-                              attached — the homepage claim strip's
-                              generic "Highlight" link; out of scope,
-                              never built)
+  highlight/page.tsx        — the old query-param placeholder. ORPHANED
+                              now — nothing links to it since the claim
+                              strip button was rewired (see "Claim strip
+                              Highlight button"). Left in place, not
+                              deleted; that's a separate ask.
   highlight/[id]/page.tsx   — REAL: Dodo checkout form for one idea
                               (force-dynamic)
   highlight/[id]/done/page.tsx — REAL: post-checkout confirmation/poll
@@ -92,6 +102,11 @@ app/
                               poll (force-dynamic)
   api/dodo/webhook/route.ts — POST: source of truth for placement —
                               see "Highlight Board payment flow" below
+  board/page.tsx             — REAL: the full Merit Board (every entry,
+                              category filter, range selector) —
+                              force-dynamic, see "Full Merit Board page"
+                              below. Highlight Board has no equivalent
+                              full-list page — never requested.
   test/page.tsx              — raw-JSON scoring test page — see Known Issues
   home.css, result.css, highlight.css — see "CSS namespacing" below
   layout.tsx                 — root layout + blocking dark-mode bootstrap script
@@ -257,6 +272,35 @@ instruction to match the (unseen by Claude) terms page. Single source
 of truth is `lib/board-ui.ts`'s `MIN_BID`/`MAX_BID` — don't hardcode
 the number anywhere else.
 
+**`ranges()`'s round-tier fallback (fixed 2026-08-28).** With, say, 16
+entries, the round "Top N" steps are 3/10/20/50 — `total >= 20` and
+`total >= 50` are both false, so the tiers stopped at "Top 10" and
+rows 11–16 were permanently unreachable through the UI (there was no
+"show everything" option). This isn't specific to 16 — the same gap
+exists at every boundary (e.g. 35 entries stalls at "Top 20", 7
+entries stalls at "Top 3"). Fixed by tracking the largest round tier
+actually emitted and, whenever the total is still past it (and not
+already in the >50 chunked-pagination branch), appending one final
+tier labeled with the real count — `All 16`, not another round number,
+since none fits. Verified with a standalone script across totals
+1/2/3/7/10/16/20/35/50/51/100/101 before touching the DB, then again
+live against 17 real submissions (`Top 3 | Top 10 | All 17`, clicking
+it actually renders all 17). One function, shared by both boards'
+`RangeSelector`s, so both were fixed by the one change.
+
+**Full Merit Board page (`/board`, added 2026-08-28).** "See the Full
+Board →" used to be `href="#"` — there was no real destination, it
+just scrolled to a section already on screen. `app/board/page.tsx` +
+`components/FullBoardView.tsx` are a real page now: every Merit Board
+entry (not the homepage widget's slice), same category filter/range
+selector/like-toggle behavior, `force-dynamic` for the same reason
+every other DB-reading page is. Deliberately reuses `SiteHeader`/
+`SiteFooter` (not `LegalLayout` — that's built for prose sections, not
+board rows) plus `home.css`'s existing `.row`/`.tab`/`.ranges`/`.heart`
+classes and `legal.css`'s `.legal-view`/`.legal-lede` page-head
+treatment for the title/lede — no new stylesheet needed. There's no
+equivalent full-list page for the Highlight Board; never requested.
+
 **Likes dedupe by device ID *and* IP**, as two separate unique DB
 indexes (`likes_submission_device_idx`, `likes_submission_ip_idx`) —
 a new row is rejected if *either* already matches for that idea, not
@@ -381,10 +425,11 @@ real `<a href="/highlight/N?amount=...">`, not the button.
   Highlight button" below. The file itself was left in place rather
   than deleted, since removing a route is a decision worth a separate
   ask rather than an assumed cleanup. Flagged again in Known issues.
-- **Two banner links are still real placeholders**: the Highlight Board
-  banner's "Get Featured →" and the Merit Board banner's "See the Full
-  Board →" (`components/RateMyIdeaApp.tsx`), both still `href="#"`.
-  Never specced or requested; not touched.
+- **One banner link is still a real placeholder**: the Highlight
+  Board banner's "Get Featured →" (`components/RateMyIdeaApp.tsx`),
+  still `href="#"`. Never specced or requested; not touched. The Merit
+  Board banner's "See the Full Board →" is real now — see "Full Merit
+  Board page" above.
 - **Result view's dark theme exists** (see above) — don't reintroduce
   the "no dark mode" gap that used to be documented here; it's been
   fixed.
