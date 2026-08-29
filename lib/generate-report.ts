@@ -107,6 +107,166 @@ const DIMENSION_ORDER = [
   "Delusion index",
 ] as const;
 
+// Structural verification: after generation, every named company must
+// be checked against the ACTUAL search results the response contains —
+// never trust the model's own "verified" self-report. See
+// sanitizeAndVerify() below. Found and fixed after a real failure: a
+// mid-score report (submission 17, 2026-08-29) had real, relevant
+// search hits (Intelligems, Triple Whale) sitting in its own
+// web_search_tool_result blocks, but shipped an empty existingPlayers
+// array and falsely claimed "web search was unavailable" — this whole
+// block exists to catch exactly that class of failure in code, not
+// just discourage it in the prompt.
+
+function normalizeDomain(url: string): string | null {
+  try {
+    const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+    const parts = host.split(".");
+    // "www.triplewhale.com" -> "triplewhale" — the registrable label,
+    // not the full host, so a result under a different subdomain of
+    // the same site still matches.
+    return parts.length >= 2 ? parts[parts.length - 2] : host;
+  } catch {
+    return null;
+  }
+}
+
+// Generic platforms/aggregators/press outlets — showing up in search
+// results doesn't mean "a named competitor was found," so these are
+// excluded from findLikelyMissedCompetitor()'s heuristic below.
+const GENERIC_HOSTS = new Set([
+  "wikipedia",
+  "youtube",
+  "google",
+  "quora",
+  "reddit",
+  "linkedin",
+  "medium",
+  "substack",
+  "gumroad",
+  "facebook",
+  "twitter",
+  "instagram",
+  "tiktok",
+  "businesswire",
+  "techcrunch",
+  "forbes",
+  "crunchbase",
+  "shopify",
+  "stackshare",
+  "goodreads",
+]);
+
+/**
+ * Best-effort signal that search returned a real, specifically-named
+ * result the report should have cited but didn't — the exact id-17
+ * failure mode. A search query that's clearly hunting one branded
+ * entity (its normalized text contains that entity's domain) whose
+ * result actually came back is strong evidence of a genuine hit. This
+ * is a *trigger for a retry*, not the final word on validity —
+ * sanitizeAndVerify() still requires the model to name and cite it
+ * correctly before it ships.
+ */
+function findLikelyMissedCompetitor(
+  sources: ReportSource[]
+): ReportSource | null {
+  for (const s of sources) {
+    if (!s.query) continue;
+    const domain = normalizeDomain(s.url);
+    if (!domain || domain.length < 4 || GENERIC_HOSTS.has(domain)) continue;
+    const normalizedQuery = s.query.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (normalizedQuery.includes(domain)) return s;
+  }
+  return null;
+}
+
+/**
+ * Matches a claim that the search *tool itself* was unavailable or
+ * broken — not a legitimate "I searched and found nothing relevant"
+ * finding, which is a different, allowed claim and shouldn't trip
+ * this. This is the literal false claim seen during testing: "Live web
+ * search was unavailable during this session's research pass," while
+ * the same response's own tool-result blocks held real results.
+ */
+function claimsSearchUnavailable(note: string): boolean {
+  return /search\s+(?:tool\s+)?(?:was|is|were)?\s*(?:currently\s+)?(unavailable|not available|down|inaccessible|didn'?t work|could not (?:be )?(?:performed|completed|run)|failed to (?:run|return|load))/i.test(
+    note
+  );
+}
+
+interface VerificationResult {
+  ok: boolean;
+  reason?: string;
+  strippedNames: string[];
+}
+
+/**
+ * Mutates content.page2.existingPlayers in place, keeping only entries
+ * whose sourceUrl's domain actually appears among the real search
+ * results — everything else is stripped (fabricated URL, or a
+ * `verified: false` entry named against instructions; neither can map
+ * to a real source by definition). Then checks the two structural
+ * failure conditions requested: existingPlayers ending up empty when a
+ * likely real competitor was sitting in the search results, and a
+ * false "search was unavailable" claim made alongside real results.
+ * Returns ok: false with a reason in either case — the caller retries
+ * on failure, it does not ship a partially-sanitized report as a
+ * silent success.
+ */
+function sanitizeAndVerify(
+  content: DeepDiveReportContent,
+  sources: ReportSource[]
+): VerificationResult {
+  const realDomains = new Set(
+    sources
+      .map((s) => normalizeDomain(s.url))
+      .filter((d): d is string => d !== null)
+  );
+
+  const originalCount = content.page2.existingPlayers.length;
+  const strippedNames: string[] = [];
+  content.page2.existingPlayers = content.page2.existingPlayers.filter(
+    (p) => {
+      const domain = p.sourceUrl ? normalizeDomain(p.sourceUrl) : null;
+      const mapped = domain !== null && realDomains.has(domain);
+      if (!mapped) strippedNames.push(p.name);
+      return mapped;
+    }
+  );
+
+  if (content.page2.existingPlayers.length === 0) {
+    if (originalCount > 0) {
+      return {
+        ok: false,
+        reason: `all ${originalCount} named compan${originalCount === 1 ? "y" : "ies"} failed source verification (${strippedNames.join(", ")}) — none map to a real search result URL`,
+        strippedNames,
+      };
+    }
+    const missed = findLikelyMissedCompetitor(sources);
+    if (missed) {
+      return {
+        ok: false,
+        reason: `existingPlayers is empty, but search returned a likely competitor result: "${missed.title}" (${missed.url})`,
+        strippedNames,
+      };
+    }
+  }
+
+  if (
+    content.page2.noPlayersFoundNote &&
+    sources.length > 0 &&
+    claimsSearchUnavailable(content.page2.noPlayersFoundNote)
+  ) {
+    return {
+      ok: false,
+      reason: `noPlayersFoundNote claims search was unavailable, but ${sources.length} real search results exist`,
+      strippedNames,
+    };
+  }
+
+  return { ok: true, strippedNames };
+}
+
 function stripMarkdownFences(raw: string): string {
   return raw
     .trim()
@@ -334,12 +494,21 @@ function countWords(content: DeepDiveReportContent): number {
   return strings.join(" ").split(/\s+/).filter(Boolean).length;
 }
 
+// Structural rule, not a soft target: "after two failed attempts, fail
+// loudly rather than returning an unverified report." One retry, two
+// attempts total — not three, not unlimited.
+const MAX_ATTEMPTS = 2;
+
 /**
  * Generates the deep-dive report for one already-scored submission.
- * Generation-only — no persistence, no PDF, no payment gate. Each call
- * is a real, billed Sonnet + web search request; nothing here caches
- * or dedupes repeated calls for the same id (that's a later stage's
- * problem once this is wired behind payment).
+ * Generation-only — no persistence, no PDF, no payment gate. Each
+ * attempt is a real, billed Sonnet + web search request; nothing here
+ * caches or dedupes repeated calls for the same id (that's a later
+ * stage's problem once this is wired behind payment). A failed
+ * attempt (malformed JSON, wrong shape, or failed source verification —
+ * see sanitizeAndVerify) is retried once with the specific failure
+ * reason appended to the prompt; failing verification twice throws
+ * rather than returning a report that hasn't actually been checked.
  */
 export async function generateReport(
   submissionId: number
@@ -349,53 +518,67 @@ export async function generateReport(
     throw new Error(`No submission with id ${submissionId}.`);
   }
 
-  const userPrompt = buildUserPrompt(idea);
+  const basePrompt = buildUserPrompt(idea);
+  let lastFailureReason = "unknown failure";
 
-  let { finalText, sources } = await runReportGeneration(userPrompt);
-  let parsed: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const prompt =
+      attempt === 1
+        ? basePrompt
+        : `${basePrompt}\n\nYour previous attempt failed verification: ${lastFailureReason}. Follow the worked citation example exactly — use the actual URL from a search result you already received, and only say no competitor was found if your searches genuinely returned nothing relevant to this idea.`;
 
-  try {
-    parsed = JSON.parse(extractJsonObject(finalText));
-  } catch {
-    console.warn(
-      `[generate-report] malformed JSON for submission ${submissionId}, retrying once`
-    );
-    const retry = await runReportGeneration(
-      userPrompt +
-        "\n\nYour previous response was not valid JSON. Return ONLY the JSON object described in your instructions — no markdown fences, no other text."
-    );
-    finalText = retry.finalText;
-    sources = [...sources, ...retry.sources];
-    parsed = JSON.parse(extractJsonObject(finalText));
-  }
+    const { finalText, sources } = await runReportGeneration(prompt);
 
-  if (!contentShapeIsValid(parsed)) {
-    console.error(
-      `[generate-report] response failed shape validation for submission ${submissionId}. Raw:`,
-      finalText
-    );
-    throw new Error("Report generation returned JSON that didn't match the expected shape.");
-  }
-
-  for (const player of parsed.page2.existingPlayers) {
-    if (player.verified && !player.sourceUrl) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(extractJsonObject(finalText));
+    } catch {
+      lastFailureReason = "response was not valid JSON";
       console.warn(
-        `[generate-report] submission ${submissionId}: "${player.name}" marked verified with no sourceUrl — check manually.`
+        `[generate-report] submission ${submissionId}, attempt ${attempt}: ${lastFailureReason}`
+      );
+      continue;
+    }
+
+    if (!contentShapeIsValid(parsed)) {
+      lastFailureReason = "response JSON didn't match the expected shape";
+      console.warn(
+        `[generate-report] submission ${submissionId}, attempt ${attempt}: ${lastFailureReason}. Raw:`,
+        finalText
+      );
+      continue;
+    }
+
+    const verification = sanitizeAndVerify(parsed, sources);
+    if (verification.strippedNames.length > 0) {
+      console.warn(
+        `[generate-report] submission ${submissionId}, attempt ${attempt}: stripped unmappable compan${verification.strippedNames.length === 1 ? "y" : "ies"}: ${verification.strippedNames.join(", ")}`
       );
     }
+    if (!verification.ok) {
+      lastFailureReason = verification.reason!;
+      console.warn(
+        `[generate-report] submission ${submissionId}, attempt ${attempt} failed source verification: ${lastFailureReason}`
+      );
+      continue;
+    }
+
+    return {
+      ...parsed,
+      submissionId,
+      ideaText: idea.ideaText,
+      category: idea.category,
+      scores: idea.scores,
+      totalScore: idea.total,
+      verdict: idea.verdict,
+      generatedAt: new Date().toISOString(),
+      model: MODEL,
+      sources,
+      approxWordCount: countWords(parsed),
+    };
   }
 
-  return {
-    ...parsed,
-    submissionId,
-    ideaText: idea.ideaText,
-    category: idea.category,
-    scores: idea.scores,
-    totalScore: idea.total,
-    verdict: idea.verdict,
-    generatedAt: new Date().toISOString(),
-    model: MODEL,
-    sources,
-    approxWordCount: countWords(parsed),
-  };
+  throw new Error(
+    `Report generation for submission ${submissionId} failed verification after ${MAX_ATTEMPTS} attempts: ${lastFailureReason}`
+  );
 }

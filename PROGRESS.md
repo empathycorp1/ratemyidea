@@ -639,6 +639,121 @@ high-scoring exists in the live data yet) to get real coverage of the
 its report generated — it was never a real submission and never
 visible on any board.
 
+### Structural accuracy fix (2026-08-29, same day) — id 17's failure, and a blocked validation
+
+The id-17 failure above ("Live web search was unavailable" while real
+results existed) was fixed structurally, not just reworded in the
+prompt, per explicit instruction ("fix it structurally, not just in
+the prompt"):
+
+1. **A worked citation example** added to `REPORT_SYSTEM_PROMPT`
+   (`lib/report-prompt.ts`) — a concrete search result (`Triple Whale`,
+   a real title+url pair) walked through into exactly the
+   `existingPlayers` entry it should produce, plus an explicit
+   instruction not to write "search was unavailable" when tool calls
+   actually returned results.
+2. **Code-level verification, not just a better prompt.**
+   `lib/generate-report.ts` gained `sanitizeAndVerify(content, sources)`,
+   run after every generation, before anything is returned:
+   - `normalizeDomain()` extracts a comparable domain from a URL;
+     every `existingPlayers[].sourceUrl` is checked against the domains
+     of the *real* `sources` this generation's own web searches
+     returned (extracted independently from `web_search_tool_result`
+     blocks, the same mechanism that caught the original id-17 bug).
+     Any competitor whose `sourceUrl` doesn't map to a real result
+     domain is **stripped**, not trusted.
+   - `findLikelyMissedCompetitor()` — if `existingPlayers` ends up
+     empty, checks whether any search query looks like a targeted
+     brand search whose own domain shows up in the results (e.g.
+     querying "Triple Whale ecommerce analytics" and getting a
+     triplewhale.com hit back) — a heuristic sign the model had a
+     competitor in hand and dropped it. `GENERIC_HOSTS` (wikipedia,
+     g2, crunchbase, techcrunch, forbes, etc.) is excluded from this
+     check so an incidental mention on a generic aggregator doesn't
+     falsely trigger it.
+   - `claimsSearchUnavailable()` regex-catches the exact false-claim
+     pattern from id 17 ("search was unavailable/down/failed") and
+     distinguishes it from a legitimate "no relevant results found."
+   - Any of the above failing (all players stripped, a likely-missed
+     competitor detected, or a false unavailability claim) rejects the
+     generation with a specific reason.
+3. **A hard 2-attempt cap** (`MAX_ATTEMPTS = 2` in `generateReport()`).
+   A rejected first attempt retries once, with the specific failure
+   reason fed back into the prompt ("your previous attempt failed
+   verification: X — follow the worked citation example exactly").
+   A second rejection throws rather than ever returning an unverified
+   report — no silent fallback to unsourced content for a paid
+   product.
+
+Typechecked, linted, and `npm run build` clean after the rewrite.
+
+**Validation was ordered next — ten reports across the score range,
+checking the pass rate unaided — and it is INCOMPLETE, blocked by a
+real external problem, not abandoned.** Set up: 7 real submissions
+spanning the live score range (ids 34/2/3/15/1/17/11, scores 12–48)
+plus 3 temporary SQL-inserted rows to cover the 60s/70s/80s bands
+(ids 36/37/38, deleted immediately after this test — see cleanup
+below), fired as 3 concurrent batches. Result: **the Anthropic account
+ran out of API credit balance mid-run** ("Your credit balance is too
+low to access the Anthropic API") — confirmed from the dev server's
+own logs, not assumed: the first 3 requests in flight when the balance
+hit zero failed after 77–82s (mid-stream, having already opened an
+SSE connection and done real work), and every request after that
+failed instantly (~1s, rejected before a stream even opened). This is
+a billing/console issue on the Anthropic side, not a code bug — I
+cannot add credit myself; that needs the user at
+console.anthropic.com → Plans & Billing.
+
+**Only 1 of the 10 reports actually completed: id 15 (score 26,
+marketing-dashboard-plus-agency-directory idea).** It passed
+verification cleanly on the first attempt — no retry, nothing
+stripped: all 5 named competitors (AgencyAnalytics, Whatagraph,
+Improvado, Clutch, UpCity) had a `sourceUrl` whose domain matched a
+real search result the same generation had actually returned. One
+clean data point in favor of the fix, not the ten-report confirmation
+that was asked for — **do not treat this as "near 100% verified,"
+it's one sample.** The other 9 reports need regenerating once the
+Anthropic account has credit again; nothing about the code needs to
+change first.
+
+**Cleanup done regardless of the blocked test**: the 3 temporary rows
+(36/37/38) were deleted immediately (`submissions` count back to 18,
+confirmed by direct query), and the throwaway test script used to fire
+the 10 requests was deleted — it was never committed to git.
+
+### UX flow recommendation for the paid product (asked 2026-08-29, design only — not built)
+
+At 1.5–3 minutes per report, a buyer who just paid should not sit on a
+blocking spinner. Recommendation: **take payment, generate in the
+background, and let the buyer land on a status page that also polls**
+— this mirrors the existing Highlight flow's own pattern
+(`/highlight/[id]/done` polling `GET /api/highlight/status/[id]`,
+which calls `reconcileHighlight()` on every poll) rather than
+inventing a new UX primitive. Concretely: Dodo webhook fires on
+payment success → write a `pending` row to a new `reports` table →
+kick off generation → redirect/land the buyer on `/report/[id]/done`,
+which polls a status endpoint and shows the PDF (or a download link)
+the moment it's ready, with a "we'll also email it to you" fallback
+for anyone who closes the tab. This needs two things that don't exist
+in this codebase yet, and neither should be assumed trivial:
+
+1. **No email-sending infrastructure at all** — no provider, no
+   templates, no send path anywhere in the code. Needs to be picked
+   (Resend, Postmark, SES, etc.) and built from scratch if "email the
+   PDF when ready" is part of the flow, not adapted from something
+   existing.
+2. **A webhook handler can't block for 1.5–3 minutes.** The Dodo
+   webhook (`/api/dodo/webhook`) is a normal Vercel serverless request/
+   response cycle — it has to return quickly. Kicking off report
+   generation from inside it needs either `waitUntil()` (extends
+   execution past the response, still bounded by the function's max
+   duration) or a real queue/cron mechanism — not the pattern
+   `activateHighlight`/`reconcileHighlight` use today, which complete
+   in well under a second.
+
+Not built — explicitly gated behind the 10-report validation above
+finishing at a real pass rate first.
+
 ## Half-finished / explicitly deferred (by instruction, not by accident)
 
 - **`app/highlight/page.tsx` (the bare `/highlight?amount=` placeholder)
@@ -712,16 +827,31 @@ visible on any board.
    happened only when the Vercel CLI's device login broke. Everything
    before that point has no per-change history, just the state of the
    world at that moment.
-8. **The deep-dive report generator (`lib/generate-report.ts`)
-   sometimes claims web search "was unavailable" and names companies
-   from memory instead, when search demonstrably worked** — seen in 1
-   of 3 test runs, not yet fixed. Full writeup, evidence, and a likely
-   cause in "Deep-dive report" above. Don't trust `page2.existingPlayers`
-   /`noPlayersFoundNote` at face value yet across a larger sample.
+8. **The deep-dive report generator's id-17 accuracy failure (false
+   "search was unavailable" claim) has a structural, code-level fix
+   now** (`sanitizeAndVerify`/`findLikelyMissedCompetitor`/
+   `claimsSearchUnavailable` + a hard 2-attempt cap, see "Structural
+   accuracy fix" in "Deep-dive report" above) **but the 10-report
+   validation pass is incomplete — blocked by the Anthropic account
+   running out of API credit balance mid-test, not by a code issue.**
+   Only 1 of 10 sample reports actually ran (id 15, passed cleanly).
+   **Do not build anything on top of the report generator, and don't
+   trust it "near 100% verified," until: (a) credit is added at
+   console.anthropic.com, and (b) the remaining ~9 reports across the
+   score range are generated and checked** — this was the user's
+   explicit gate before further work.
 9. **The same generator runs 1.5-3 minutes per report**, not the
    30-60s originally targeted — improved from an initial 3-5 minutes
    (see "Deep-dive report" above for the two fixes and what's left to
-   try if 30-60s turns out to be a hard requirement).
+   try if 30-60s turns out to be a hard requirement). Also relevant to
+   the UX-flow question the user asked in the same request as the
+   accuracy fix — see that section for the recommendation (background
+   generation + email/poll, not a blocking wait) and the two real gaps
+   it surfaces: **no email-sending infrastructure exists in this
+   codebase at all**, and a Vercel serverless webhook handler can't
+   just block for 1.5+ minutes — background generation needs
+   `waitUntil()` or a queue/cron mechanism, not the request/response
+   cycle the webhook itself runs on.
 
 ## Environment / deployment
 

@@ -33,6 +33,19 @@ ${SCORING_SYSTEM_PROMPT}
 4. **Distinguish clearly, in the writing itself, between what you found and what you're inferring.** "TechCrunch reported X raised $12M in 2024" is a finding. "This suggests the category has investor interest" is inference built on it — label it as such rather than blurring the two together.
 5. Every entry in \`page2.existingPlayers\` must be marked \`verified: true\` with a real \`sourceUrl\` from an actual search result, or \`verified: false\` with \`sourceUrl: null\` if you're naming something you could not confirm (which you should avoid — prefer leaving a company out over naming it unconfirmed).
 
+### Worked example: turning a search result into a cited competitor
+
+Say you run the search "Triple Whale ecommerce revenue analytics platform" and one of the results that comes back is:
+
+  title: "Triple Whale"
+  url: "https://www.triplewhale.com/"
+
+That result becomes exactly this entry in \`existingPlayers\` — using the URL **from the result itself**, copied as-is, never a URL you construct, guess, or recall from training:
+
+{ "name": "Triple Whale", "description": "An ecommerce analytics dashboard that surfaces revenue and marketing performance metrics for DTC brands.", "verified": true, "sourceUrl": "https://www.triplewhale.com/" }
+
+If a search result in front of you is a company's own site, or a credible article naming and describing it, that is a result — use it. **Do not write "search was unavailable" or "no players were found" when your tool calls actually returned results.** Only say a search found nothing relevant when the results you genuinely got back don't name or describe anything that competes with this idea — not when you're simply unsure how to phrase the citation. If you have a title and a URL in a \`web_search_tool_result\` block, you have everything \`sourceUrl\` needs.
+
 ## Structure — three pages, roughly 1,500 words total across all three
 
 **Page 1 — the verdict argued** (\`page1\`)
