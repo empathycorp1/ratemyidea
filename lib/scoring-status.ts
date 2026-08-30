@@ -24,4 +24,4 @@ export const SCORING_PAUSED = true;
  *  (with different surrounding JSON) by `/api/score`. One string, so
  *  the two surfaces can't drift out of sync while this is flipped on. */
 export const SCORING_PAUSED_MESSAGE =
-  "Scoring is paused till I top up. Everything already scored is still here.";
+  "Submissions closed. The paid tier isn't holding up economically. Everything already scored is still here. Thanks for being a part of this side project!";
